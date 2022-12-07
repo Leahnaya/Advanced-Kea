@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using HtmlAgilityPack;
@@ -155,11 +156,16 @@ namespace Kea
             if (line == "") return;
             chapterLinks.RemoveRange(0, chapterLinks.Count);
             int urlEnd = (line.IndexOf('&') == -1) ? line.Length : line.IndexOf('&');
+            line = line.Substring(0, urlEnd);
+            Uri baseUri = new Uri(line);
+            string baseUrl = baseUri.GetLeftPart(UriPartial.Path);
+
             using (WebClient client = new WebClient())
             {
                 int i = 0;
-                string firstLink = "Thanks for looking through my source code lol";
-                bool checkedForLink, foundEnd = false;
+				
+				string html = client.DownloadString(line + "&page=1");
+				
                 while (true)
                 {
                     i++;
@@ -169,28 +175,33 @@ namespace Kea
                     client.Proxy = proxy;
 					
 					client.Encoding = System.Text.Encoding.UTF8;
+
+					var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+					htmlDoc.LoadHtml(html);
+					var episodeNodes = htmlDoc.DocumentNode.SelectNodes("//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[starts-with(@class,'detail_body')]/div[@class='detail_lst']/ul[@id='_listUl']/li[@class='_episodeItem']");
+
+					if(episodeNodes != null)
+					{
+						foreach (var node in episodeNodes)
+						{
+
+							HtmlNode inner_a_node = node.SelectSingleNode("./a");
+							string url = inner_a_node.Attributes["href"].Value;
+							string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
+							
+							chapterLinks.Add(url); //link of the chapter
+                            chapterNames.Add(episodeTitle); //name of the chapter
+						}
+					}
 					
-                    string html = await client.DownloadStringTaskAsync(line.Substring(0, urlEnd) + "&page=" + i);
-                    HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();   //HtmlAgility magic
-                    doc.LoadHtml(html);
-                    HtmlNode div = doc.GetElementbyId("_listUl");
-                    HtmlNodeCollection childNodes = div.ChildNodes;
-                    checkedForLink = false;
-                    for (int j = 0; j < childNodes.Count; j++)
-                    {
-                        if (childNodes[j].HasChildNodes)
-                        {
-                            if (!checkedForLink && firstLink != childNodes[j].ChildNodes[1].Attributes["href"].Value)   //stop if no higher page count could be found
-                            {
-                                firstLink = childNodes[j].ChildNodes[1].Attributes["href"].Value;
-                                checkedForLink = true;
-                            }
-                            else if (!checkedForLink) { foundEnd = true; break; }
-                            chapterLinks.Add(childNodes[j].ChildNodes[1].Attributes["href"].Value); //link of the chapter
-                            chapterNames.Add(childNodes[j].ChildNodes[1].ChildNodes[3].ChildNodes[0].InnerHtml); //name of the chapter
-                        }
-                    }
-                    if (foundEnd) break;
+					string nextPage = GetWebsiteNextPageUrl(htmlDoc);
+					if (String.IsNullOrEmpty(nextPage) || String.IsNullOrWhiteSpace(nextPage))
+						break;
+
+					if (!IsValidURL(nextPage))
+						nextPage = baseUri.GetLeftPart(UriPartial.Authority) + nextPage;
+
+					html = client.DownloadString(nextPage);
                 }
             }
             chapterLinks.Reverse();
@@ -351,6 +362,40 @@ namespace Kea
             }
 
             return destImage;
+        }
+
+		public static string GetWebsiteNextPageUrl(HtmlAgilityPack.HtmlDocument htmlDoc)
+        {
+            var pageNodes = htmlDoc.DocumentNode.SelectNodes("//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[starts-with(@class,'detail_body')]/div[@class='detail_lst']/div[@class='paginate']/a");
+            var nextPageUrl = "";
+
+            if (pageNodes == null)
+                return "";
+
+            bool bGetNextPage = false;
+            foreach (var node in pageNodes)
+            {
+                if (node.Attributes["href"] != null)
+                {
+                    if (bGetNextPage)
+                    {
+                        nextPageUrl = node.Attributes["href"].Value;
+                        bGetNextPage = false;
+                        break;
+                    }
+
+                    if (node.Attributes["href"].Value == "#")
+                        bGetNextPage = true;
+                }
+            }
+            return nextPageUrl;
+        }
+
+        public static bool IsValidURL(string URL)
+        {
+            string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
+            Regex Rgx = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            return Rgx.IsMatch(URL);
         }
 
         #region visuals
