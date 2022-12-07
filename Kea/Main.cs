@@ -167,6 +167,9 @@ namespace Kea
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
                     IWebProxy proxy = WebRequest.DefaultWebProxy;   //add default proxy
                     client.Proxy = proxy;
+					
+					client.Encoding = System.Text.Encoding.UTF8;
+					
                     string html = await client.DownloadStringTaskAsync(line.Substring(0, urlEnd) + "&page=" + i);
                     HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();   //HtmlAgility magic
                     doc.LoadHtml(html);
@@ -234,6 +237,9 @@ namespace Kea
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
                     IWebProxy proxy = WebRequest.DefaultWebProxy;    //add default proxy
                     client.Proxy = proxy;
+					
+					client.Encoding = System.Text.Encoding.UTF8;
+					
                     string html = client.DownloadString(ToonChapters[t][i]);
                     HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                     doc.LoadHtml(html);
