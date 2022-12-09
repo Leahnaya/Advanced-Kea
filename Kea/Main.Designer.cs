@@ -60,6 +60,7 @@
             this.helpBtn = new System.Windows.Forms.Button();
             this.toolTips = new System.Windows.Forms.ToolTip(this.components);
             this.saveAsOption = new System.Windows.Forms.ComboBox();
+            this.HighestQualityCB = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.HandleBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exitBtn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.QueueGrid)).BeginInit();
@@ -85,7 +86,7 @@
             this.label1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.label1.Location = new System.Drawing.Point(12, 42);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(106, 15);
+            this.label1.Size = new System.Drawing.Size(114, 16);
             this.label1.TabIndex = 2;
             this.label1.Text = "enter URLs below";
             // 
@@ -119,7 +120,7 @@
             this.label3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.label3.Location = new System.Drawing.Point(9, 203);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(43, 15);
+            this.label3.Size = new System.Drawing.Size(46, 16);
             this.label3.TabIndex = 6;
             this.label3.Text = "queue";
             // 
@@ -170,7 +171,7 @@
             this.label4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.label4.Location = new System.Drawing.Point(9, 530);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(130, 15);
+            this.label4.Size = new System.Drawing.Size(131, 16);
             this.label4.TabIndex = 12;
             this.label4.Text = "currently processing:";
             // 
@@ -268,7 +269,7 @@
             this.label2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.label2.Location = new System.Drawing.Point(9, 430);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(119, 15);
+            this.label2.Size = new System.Drawing.Size(121, 16);
             this.label2.TabIndex = 17;
             this.label2.Text = "use sub-folders for:";
             // 
@@ -281,7 +282,7 @@
             this.cartoonFoldersCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.cartoonFoldersCB.Location = new System.Drawing.Point(154, 429);
             this.cartoonFoldersCB.Name = "cartoonFoldersCB";
-            this.cartoonFoldersCB.Size = new System.Drawing.Size(103, 19);
+            this.cartoonFoldersCB.Size = new System.Drawing.Size(105, 20);
             this.cartoonFoldersCB.TabIndex = 18;
             this.cartoonFoldersCB.Text = "each cartoon";
             this.cartoonFoldersCB.UseVisualStyleBackColor = true;
@@ -294,7 +295,7 @@
             this.chapterFoldersCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.chapterFoldersCB.Location = new System.Drawing.Point(280, 429);
             this.chapterFoldersCB.Name = "chapterFoldersCB";
-            this.chapterFoldersCB.Size = new System.Drawing.Size(104, 19);
+            this.chapterFoldersCB.Size = new System.Drawing.Size(105, 20);
             this.chapterFoldersCB.TabIndex = 19;
             this.chapterFoldersCB.Text = "each chapter";
             this.chapterFoldersCB.UseVisualStyleBackColor = true;
@@ -350,7 +351,7 @@
             this.label5.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.label5.Location = new System.Drawing.Point(9, 457);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(110, 15);
+            this.label5.Size = new System.Drawing.Size(114, 16);
             this.label5.TabIndex = 23;
             this.label5.Text = "save chapters as:";
             // 
@@ -361,7 +362,7 @@
             this.label6.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.label6.Location = new System.Drawing.Point(9, 379);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(49, 15);
+            this.label6.Size = new System.Drawing.Size(52, 16);
             this.label6.TabIndex = 26;
             this.label6.Text = "options";
             // 
@@ -373,7 +374,7 @@
             this.label7.ForeColor = System.Drawing.Color.White;
             this.label7.Location = new System.Drawing.Point(44, 6);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(32, 17);
+            this.label7.Size = new System.Drawing.Size(35, 16);
             this.label7.TabIndex = 27;
             this.label7.Text = "Kea";
             // 
@@ -417,10 +418,24 @@
             "one image (may be lower in quality)"});
             this.saveAsOption.Location = new System.Drawing.Point(154, 455);
             this.saveAsOption.Name = "saveAsOption";
-            this.saveAsOption.Size = new System.Drawing.Size(230, 23);
+            this.saveAsOption.Size = new System.Drawing.Size(230, 24);
             this.saveAsOption.TabIndex = 30;
             this.saveAsOption.Text = "PDF file";
             this.saveAsOption.SelectedIndexChanged += new System.EventHandler(this.saveAsOption_SelectedIndexChanged);
+            // 
+            // HighestQualityCB
+            // 
+            this.HighestQualityCB.AutoSize = true;
+            this.HighestQualityCB.Checked = true;
+            this.HighestQualityCB.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.HighestQualityCB.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+			this.HighestQualityCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
+            this.HighestQualityCB.Location = new System.Drawing.Point(390, 458);
+            this.HighestQualityCB.Name = "HighestQualityCB";
+            this.HighestQualityCB.Size = new System.Drawing.Size(97, 17);
+            this.HighestQualityCB.TabIndex = 31;
+            this.HighestQualityCB.Text = "Highest Quality";
+            this.HighestQualityCB.UseVisualStyleBackColor = true;
             // 
             // Main
             // 
@@ -428,6 +443,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(176)))), ((int)(((byte)(193)))), ((int)(((byte)(185)))));
             this.ClientSize = new System.Drawing.Size(544, 574);
+            this.Controls.Add(this.HighestQualityCB);
             this.Controls.Add(this.saveAsOption);
             this.Controls.Add(this.helpBtn);
             this.Controls.Add(this.pictureBox1);
@@ -500,6 +516,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.ToolTip toolTips;
         private System.Windows.Forms.ComboBox saveAsOption;
+        private System.Windows.Forms.CheckBox HighestQualityCB;
     }
 }
 

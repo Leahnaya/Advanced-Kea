@@ -264,8 +264,16 @@ namespace Kea
                             processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"downloading image {j / 2} of chapter {i + 1} of the comic \"{curName}\"!"; }); //run on the UI thread
                             client.Headers.Add("Referer", ToonChapters[t][i]);    //refresh the referer for each request!
                             string imgName = $"{curName} Ch{i + 1}.{j / 2}";
-                            if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(childNodes[j].Attributes["data-url"].Value), $"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}\\{imgName}.jpg"); }
-                            else { client.DownloadFile(new Uri(childNodes[j].Attributes["data-url"].Value), $"{savePath}\\{imgName}.jpg"); }
+                            string imgUrl = childNodes[j].Attributes["data-url"].Value;
+							
+							if(HighestQualityCB.Checked)
+							{
+								//Remove the "?type=" query string from image url, this results in downloading the image with the same quality stored in the server.
+								imgUrl = RemoveQueryStringByKey(imgUrl, "type");
+							}
+							
+                            if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}\\{imgName}.jpg"); }
+                            else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
                             processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(j / (float)childNodes.Count * 100); } catch { } });
                         }
                     }
@@ -396,6 +404,24 @@ namespace Kea
             string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
             Regex Rgx = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             return Rgx.IsMatch(URL);
+        }
+
+		public static string RemoveQueryStringByKey(string url, string key)
+        {
+            var uri = new Uri(url);
+
+            // this gets all the query string key value pairs as a collection
+            var newQueryString = System.Web.HttpUtility.ParseQueryString(uri.Query);
+
+            // this removes the key if exists
+            newQueryString.Remove(key);
+
+            // this gets the page path from root without QueryString
+            string pagePathWithoutQueryString = uri.GetLeftPart(UriPartial.Path);
+
+            return newQueryString.Count > 0
+                ? String.Format("{0}?{1}", pagePathWithoutQueryString, newQueryString)
+                : pagePathWithoutQueryString;
         }
 
         #region visuals
