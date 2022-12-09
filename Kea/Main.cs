@@ -21,11 +21,33 @@ namespace Kea
 {
     public partial class Main : Form
     {
+		public struct EpisodeListEntry
+		{
+			public string episodeSequence;
+			public int episodeNo;
+			public string episodeTitle;
+			public string url;
+		}
+
+		public struct ToonListEntryInfo
+		{
+			public int titleNo;
+			public string toonTitleName;
+			
+			public string startDownloadAtEpisode;
+			public string stopDownloadAtEpisode;
+		}
+
+		public struct ToonListEntry
+		{
+			public ToonListEntryInfo toonInfo;
+			public EpisodeListEntry[] episodeList;
+		}
+		
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
-        public float absoluteChapterNR;
-        public List<string> chapterLinks, chapterNames;
-        public List<string[]> ToonChapters, ToonChapterNames;
+
+		public List<ToonListEntry> toonList;
         public string saveAs;
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
@@ -131,11 +153,9 @@ namespace Kea
                 return;
             }
             if (QueueTextbox.Text == "") return;
-            absoluteChapterNR = 0;
-            chapterLinks = new List<string>();
-            chapterNames = new List<string>();
-            ToonChapters = new List<string[]>();
-            ToonChapterNames = new List<string[]>();
+			
+            toonList = new List<ToonListEntry>();
+			
             List<string> lines = new List<string>();
 
             lines.AddRange(QueueTextbox.Text.Split('\n'));
@@ -143,9 +163,18 @@ namespace Kea
             {
                 await Task.Run(() => GetChapterAsync(line));
             }
-            for (int t = 0; t < ToonChapters.Count; t++)    //for each comic in queue...
+            for (int t = 0; t < toonList.Count; t++)    //for each comic in queue...
             {
-                await Task.Run(() => downloadComic(t));
+				//toonList[t].toonInfo.startDownloadAtEpisode = QueueGrid.Rows[t].Cells[1].Value.ToString();
+				//toonList[t].toonInfo.stopDownloadAtEpisode = QueueGrid.Rows[t].Cells[2].Value.ToString();
+				//Workaround
+				//TODO: properly implement this.
+                ToonListEntry tList = toonList[t];
+                tList.toonInfo.toonTitleName = QueueGrid.Rows[t].Cells[0].Value.ToString();
+                tList.toonInfo.startDownloadAtEpisode = QueueGrid.Rows[t].Cells[1].Value.ToString();
+				tList.toonInfo.stopDownloadAtEpisode = QueueGrid.Rows[t].Cells[2].Value.ToString();
+				toonList[t] = tList;
+				await Task.Run(() => downloadComic(toonList[t]));
             }
             processInfo.Text = "done!";
             progressBar.Value = progressBar.Minimum;
@@ -154,11 +183,16 @@ namespace Kea
         private async Task GetChapterAsync(string line)
         {
             if (line == "") return;
-            chapterLinks.RemoveRange(0, chapterLinks.Count);
+			
+			ToonListEntry currentToonEntry = new ToonListEntry();
+            List<EpisodeListEntry> toonEpisodeList = new List<EpisodeListEntry>();
+			
             int urlEnd = (line.IndexOf('&') == -1) ? line.Length : line.IndexOf('&');
             line = line.Substring(0, urlEnd);
             Uri baseUri = new Uri(line);
             string baseUrl = baseUri.GetLeftPart(UriPartial.Path);
+
+			currentToonEntry.toonInfo.titleNo = -1/*titleNo*/;
 
             using (WebClient client = new WebClient())
             {
@@ -184,16 +218,28 @@ namespace Kea
 					{
 						foreach (var node in episodeNodes)
 						{
+							int episodeNo = -1;
+							if (node.Attributes["data-episode-no"] != null)
+							{
+								episodeNo = Convert.ToInt32(node.Attributes["data-episode-no"].Value);
+							}
 
 							HtmlNode inner_a_node = node.SelectSingleNode("./a");
 							string url = inner_a_node.Attributes["href"].Value;
 							string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
+							string episodeSequence = inner_a_node.SelectSingleNode("./span[@class='tx']").InnerHtml;
 							
-							chapterLinks.Add(url); //link of the chapter
-                            chapterNames.Add(episodeTitle); //name of the chapter
+							EpisodeListEntry currentEpisode = new EpisodeListEntry();
+							
+							currentEpisode.episodeSequence = episodeSequence;
+							currentEpisode.episodeNo = episodeNo;
+							currentEpisode.episodeTitle = SanitizeEpisodeTitle(episodeTitle);
+							currentEpisode.url = url;
+							
+							toonEpisodeList.Add(currentEpisode);
 						}
 					}
-					
+
 					string nextPage = GetWebsiteNextPageUrl(htmlDoc);
 					if (String.IsNullOrEmpty(nextPage) || String.IsNullOrWhiteSpace(nextPage))
 						break;
@@ -204,37 +250,25 @@ namespace Kea
 					html = client.DownloadString(nextPage);
                 }
             }
-            chapterLinks.Reverse();
-            absoluteChapterNR += chapterLinks.Count;
-            // add all chapter links and the chapter names of the just scrapped site to the full list of the comic
-            string[] tempChapterLinks = new string[chapterLinks.Count];
-            for (int i = 0; i < chapterLinks.Count; i++) tempChapterLinks[i] = chapterLinks[i];
-            ToonChapters.Add(tempChapterLinks);
-            chapterNames.Reverse();
-            string[] tempChapterNames = new string[chapterNames.Count];
-            //sanitize the names of chapters!
-            string invalidChars = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
-            for (int i = 0; i < chapterNames.Count; i++)
-            {
-                foreach (char c in invalidChars)
-                {
-                    chapterNames[i] = chapterNames[i].Replace(c.ToString(), "");
-                }
-                tempChapterNames[i] = chapterNames[i];
-            }
-            ToonChapterNames.Add(tempChapterNames);
+            
+			//Toons are listed from last episode to first episode, so order needs to be reversed.
+			toonEpisodeList.Reverse();
+
+            currentToonEntry.episodeList = toonEpisodeList.ToArray();
+            toonList.Add(currentToonEntry);
         }
 
-        private void downloadComic(int t)
+        private void downloadComic(ToonListEntry currentToon)
         {
             string savePath = savepathTB.Text + @"\";
-            string curName = QueueGrid.Rows[t].Cells[0].Value.ToString();
+            string curName = currentToon.toonInfo.toonTitleName;
             if (cartoonFoldersCB.Checked) { Directory.CreateDirectory(savePath + curName); savePath += curName; }
 
             //set start and end chapter
-            float startNr = int.Parse(QueueGrid.Rows[t].Cells[1].Value.ToString()) - 1;
-            float endNr = (QueueGrid.Rows[t].Cells[2].Value.ToString() == "end") ? ToonChapters[t].Length : int.Parse(QueueGrid.Rows[t].Cells[2].Value.ToString());
-            if (endNr > ToonChapters[t].Length) endNr = ToonChapters[t].Length;
+            float startNr = int.Parse(currentToon.toonInfo.startDownloadAtEpisode) - 1;
+            float endNr = (currentToon.toonInfo.stopDownloadAtEpisode == "end") ? currentToon.episodeList.Length : int.Parse(currentToon.toonInfo.stopDownloadAtEpisode);
+
+			if (endNr > currentToon.episodeList.Length) endNr = currentToon.episodeList.Length;
             processInfo.Invoke((MethodInvoker)delegate
             {
                 progressBar.Minimum = (int)startNr * 100;
@@ -242,7 +276,7 @@ namespace Kea
             });
             for (int i = (int)startNr; i < endNr; i++)    //...and for each chapter in that comic...
             {
-                processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"grabbing the html of {ToonChapters[t][i]}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
+                processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
                 using (WebClient client = new WebClient())
                 {
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
@@ -251,18 +285,18 @@ namespace Kea
 					
 					client.Encoding = System.Text.Encoding.UTF8;
 					
-                    string html = client.DownloadString(ToonChapters[t][i]);
+                    string html = client.DownloadString(currentToon.episodeList[i].url);
                     HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                     doc.LoadHtml(html);
                     HtmlNode div = doc.GetElementbyId("_imageList");
                     HtmlNodeCollection childNodes = div.ChildNodes;
-                    if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {ToonChapterNames[t][i]}"); }
+                    if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {currentToon.episodeList[i].episodeTitle}"); }
                     for (int j = 0; j < childNodes.Count; j++)  //...download all images!
                     {
                         if (childNodes[j].NodeType == HtmlNodeType.Element)
                         {
                             processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"downloading image {j / 2} of chapter {i + 1} of the comic \"{curName}\"!"; }); //run on the UI thread
-                            client.Headers.Add("Referer", ToonChapters[t][i]);    //refresh the referer for each request!
+                            client.Headers.Add("Referer", currentToon.episodeList[i].url);    //refresh the referer for each request!
                             string imgName = $"{curName} Ch{i + 1}.{j / 2}";
                             string imgUrl = childNodes[j].Attributes["data-url"].Value;
 							
@@ -272,7 +306,7 @@ namespace Kea
 								imgUrl = RemoveQueryStringByKey(imgUrl, "type");
 							}
 							
-                            if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}\\{imgName}.jpg"); }
+                            if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}\\{imgName}.jpg"); }
                             else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
                             processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(j / (float)childNodes.Count * 100); } catch { } });
                         }
@@ -280,13 +314,13 @@ namespace Kea
                 }
                 if (saveAs == "PDF file")  //bundle images into PDF
                 {
-                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}");
+                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}");
                     FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
                     string[] files = fileInfos.Select(o => o.FullName).ToArray();
                     Document doc = new Document();
                     try
                     {
-                        PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}.pdf", FileMode.Create));
+                        PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.pdf", FileMode.Create));
                         doc.Open();
                         for (int j = 0; j < files.Length; j++)
                         {
@@ -299,11 +333,11 @@ namespace Kea
                     }
                     catch { Console.WriteLine("rip"); }
                     finally { doc.Close(); }
-                    Directory.Delete($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}", true);
+                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", true);
                 }
                 else if (saveAs == "one image (may be lower in quality)") //bundle images into one long image
                 {
-                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}");
+                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}");
                     FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
                     string[] files = fileInfos.Select(o => o.FullName).ToArray();
 
@@ -329,20 +363,20 @@ namespace Kea
                         if (finalHeight > 30000)
                         {
                             Bitmap resizedImage = ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - 30000) / finalHeight)), 30000);
-                            resizedImage.Save($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}.png");
+                            resizedImage.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.png");
                         }
-                        else bm.Save($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}.png");
+                        else bm.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.png");
                     }
                     foreach (Bitmap image in images)
                     {
                         image.Dispose();
                     }
-                    Directory.Delete($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}", true);
+                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", true);
                 }
                 else if (saveAs == "CBZ file")
                 {
-                    ZipFile.CreateFromDirectory($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}", $"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}.cbz");
-                    Directory.Delete($"{savePath}\\({i + 1}) {ToonChapterNames[t][i]}", true);
+                    ZipFile.CreateFromDirectory($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.cbz");
+                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", true);
                 }
             }
         }
@@ -422,6 +456,17 @@ namespace Kea
             return newQueryString.Count > 0
                 ? String.Format("{0}?{1}", pagePathWithoutQueryString, newQueryString)
                 : pagePathWithoutQueryString;
+        }
+
+		public static string SanitizeEpisodeTitle(string episodeTitle)
+        {
+            string newepisodeTitle = episodeTitle;
+            string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
+            foreach (char c in invalidChars)
+            {
+                newepisodeTitle = newepisodeTitle.Replace(c.ToString(), "");
+            }
+            return newepisodeTitle;
         }
 
         #region visuals
