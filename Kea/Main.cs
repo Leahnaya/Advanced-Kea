@@ -202,7 +202,7 @@ namespace Kea
                 while (true)
                 {
                     i++;
-                    processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"scoping tab {i}"; }); //run on the UI thread
+                    processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToonEntry.toonInfo.titleNo}) {currentToonEntry.toonInfo.toonTitleName} ] scoping tab {i}"; }); //run on the UI thread
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
                     IWebProxy proxy = WebRequest.DefaultWebProxy;   //add default proxy
                     client.Proxy = proxy;
@@ -275,7 +275,7 @@ namespace Kea
             });
             for (int i = (int)startNr; i < endNr; i++)    //...and for each chapter in that comic...
             {
-                processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
+                processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
                 using (WebClient client = new WebClient())
                 {
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
@@ -294,7 +294,7 @@ namespace Kea
                     {
                         if (childNodes[j].NodeType == HtmlNodeType.Element)
                         {
-                            processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"downloading image {j / 2} of chapter {i + 1} of the comic \"{curName}\"!"; }); //run on the UI thread
+                            processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {j / 2} of chapter {i + 1}!"; }); //run on the UI thread
                             client.Headers.Add("Referer", currentToon.episodeList[i].url);    //refresh the referer for each request!
                             string imgName = $"{curName} Ch{i + 1}.{j / 2}";
                             string imgUrl = childNodes[j].Attributes["data-url"].Value;
