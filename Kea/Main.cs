@@ -106,13 +106,14 @@ namespace Kea
                 }
                 catch { continue; }
                 string toonName = line.Substring(nameStart, nameEnd - nameStart - 1);
-                var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName);
+				
+                Uri lineUri = new Uri(line);
+                int titleNo = Convert.ToInt32(System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("title_no"));
+				
+				var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName && Convert.ToInt32(row.Cells["titleNo"].Value.ToString()) == titleNo );
 
                 if (items.Count() != 0)
                     continue;
-
-                Uri lineUri = new Uri(line);
-                int titleNo = Convert.ToInt32(System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("title_no"));
 
                 QueueGrid.Rows.Add(titleNo, toonName, "1", "end",line);
             }
@@ -261,6 +262,7 @@ namespace Kea
         {
             string savePath = savepathTB.Text + @"\";
             string curName = currentToon.toonInfo.toonTitleName;
+			curName += $"[{currentToon.toonInfo.titleNo.ToString("D6")}]";
             if (cartoonFoldersCB.Checked) { Directory.CreateDirectory(savePath + curName); savePath += curName; }
 
 			string suffix = "";
