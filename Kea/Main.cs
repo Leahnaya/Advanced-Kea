@@ -263,6 +263,12 @@ namespace Kea
             string curName = currentToon.toonInfo.toonTitleName;
             if (cartoonFoldersCB.Checked) { Directory.CreateDirectory(savePath + curName); savePath += curName; }
 
+			string suffix = "";
+			if(HighestQualityCB.Checked)
+			{
+				suffix = "[HQ]";
+			}
+
             //set start and end chapter
             float startNr = int.Parse(currentToon.toonInfo.startDownloadAtEpisode) - 1;
             float endNr = (currentToon.toonInfo.stopDownloadAtEpisode == "end") ? currentToon.episodeList.Length : int.Parse(currentToon.toonInfo.stopDownloadAtEpisode);
@@ -277,7 +283,7 @@ namespace Kea
             {
                 processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
-				if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {currentToon.episodeList[i].episodeTitle}"); }
+				if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}"); }
 
 				using (WebClient client = new WebClient())
                 {
@@ -308,9 +314,10 @@ namespace Kea
 						{
 							//Remove the "?type=" query string from image url, this results in downloading the image with the same quality stored in the server.
 							imgUrl = RemoveQueryStringByKey(imgUrl, "type");
+							imgName += "[HQ]";
 						}
 
-						if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}\\{imgName}.jpg"); }
+						if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}\\{imgName}.jpg"); }
 						else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
 						
 						processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(imageNo / (float)totalImgCount * 100); } catch { } });
@@ -319,13 +326,13 @@ namespace Kea
                 }
                 if (saveAs == "PDF file")  //bundle images into PDF
                 {
-                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}");
+                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}");
                     FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
                     string[] files = fileInfos.Select(o => o.FullName).ToArray();
                     Document doc = new Document();
                     try
                     {
-                        PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.pdf", FileMode.Create));
+                        PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.pdf", FileMode.Create));
                         doc.Open();
                         for (int j = 0; j < files.Length; j++)
                         {
@@ -338,11 +345,11 @@ namespace Kea
                     }
                     catch { Console.WriteLine("rip"); }
                     finally { doc.Close(); }
-                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", true);
+                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", true);
                 }
                 else if (saveAs == "one image (may be lower in quality)") //bundle images into one long image
                 {
-                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}");
+                    DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}");
                     FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
                     string[] files = fileInfos.Select(o => o.FullName).ToArray();
 
@@ -368,20 +375,20 @@ namespace Kea
                         if (finalHeight > 30000)
                         {
                             Bitmap resizedImage = ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - 30000) / finalHeight)), 30000);
-                            resizedImage.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.png");
+                            resizedImage.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.png");
                         }
-                        else bm.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.png");
+                        else bm.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.png");
                     }
                     foreach (Bitmap image in images)
                     {
                         image.Dispose();
                     }
-                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", true);
+                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", true);
                 }
                 else if (saveAs == "CBZ file")
                 {
-                    ZipFile.CreateFromDirectory($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}.cbz");
-                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}", true);
+                    ZipFile.CreateFromDirectory($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.cbz");
+                    Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", true);
                 }
             }
         }
