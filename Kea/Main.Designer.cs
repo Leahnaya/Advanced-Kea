@@ -41,9 +41,6 @@
             this.label4 = new System.Windows.Forms.Label();
             this.processInfo = new System.Windows.Forms.TextBox();
             this.QueueGrid = new System.Windows.Forms.DataGridView();
-            this.Column1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.QueueTextbox = new System.Windows.Forms.RichTextBox();
             this.savepathTB = new System.Windows.Forms.TextBox();
             this.selectFolderBtn = new System.Windows.Forms.Button();
@@ -61,6 +58,11 @@
             this.toolTips = new System.Windows.Forms.ToolTip(this.components);
             this.saveAsOption = new System.Windows.Forms.ComboBox();
             this.HighestQualityCB = new System.Windows.Forms.CheckBox();
+            this.titleNo = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleEpBegin = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleEpEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.HandleBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exitBtn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.QueueGrid)).BeginInit();
@@ -194,9 +196,11 @@
             this.QueueGrid.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.Disable;
             this.QueueGrid.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.QueueGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.Column1,
-            this.Column2,
-            this.Column3});
+            this.titleNo,
+            this.titleName,
+            this.titleEpBegin,
+            this.titleEpEnd,
+            this.titleUrl});
             this.QueueGrid.Cursor = System.Windows.Forms.Cursors.Default;
             this.QueueGrid.GridColor = System.Drawing.SystemColors.ControlDarkDark;
             this.QueueGrid.Location = new System.Drawing.Point(12, 221);
@@ -205,28 +209,6 @@
             this.QueueGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.QueueGrid.Size = new System.Drawing.Size(520, 146);
             this.QueueGrid.TabIndex = 14;
-            // 
-            // Column1
-            // 
-            this.Column1.HeaderText = "Name";
-            this.Column1.Name = "Column1";
-            this.Column1.ReadOnly = true;
-            this.Column1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.Column1.Width = 160;
-            // 
-            // Column2
-            // 
-            this.Column2.HeaderText = "start at chapter";
-            this.Column2.Name = "Column2";
-            this.Column2.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.Column2.Width = 159;
-            // 
-            // Column3
-            // 
-            this.Column3.HeaderText = "End at chapter";
-            this.Column3.Name = "Column3";
-            this.Column3.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.Column3.Width = 160;
             // 
             // QueueTextbox
             // 
@@ -428,14 +410,52 @@
             this.HighestQualityCB.AutoSize = true;
             this.HighestQualityCB.Checked = true;
             this.HighestQualityCB.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.HighestQualityCB.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-			this.HighestQualityCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
+            this.HighestQualityCB.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.HighestQualityCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.HighestQualityCB.Location = new System.Drawing.Point(390, 458);
             this.HighestQualityCB.Name = "HighestQualityCB";
             this.HighestQualityCB.Size = new System.Drawing.Size(97, 17);
             this.HighestQualityCB.TabIndex = 31;
             this.HighestQualityCB.Text = "Highest Quality";
             this.HighestQualityCB.UseVisualStyleBackColor = true;
+            // 
+            // titleNo
+            // 
+            this.titleNo.Frozen = true;
+            this.titleNo.HeaderText = "Title No.";
+            this.titleNo.Name = "titleNo";
+            this.titleNo.ReadOnly = true;
+            this.titleNo.Width = 80;
+            // 
+            // titleName
+            // 
+            this.titleName.Frozen = true;
+            this.titleName.HeaderText = "Name";
+            this.titleName.Name = "titleName";
+            this.titleName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleName.Width = 160;
+            // 
+            // titleEpBegin
+            // 
+            this.titleEpBegin.Frozen = true;
+            this.titleEpBegin.HeaderText = "start at chapter";
+            this.titleEpBegin.Name = "titleEpBegin";
+            this.titleEpBegin.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // titleEpEnd
+            // 
+            this.titleEpEnd.Frozen = true;
+            this.titleEpEnd.HeaderText = "End at chapter";
+            this.titleEpEnd.Name = "titleEpEnd";
+            this.titleEpEnd.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleEpEnd.Width = 160;
+            // 
+            // titleUrl
+            // 
+            this.titleUrl.Frozen = true;
+            this.titleUrl.HeaderText = "url";
+            this.titleUrl.Name = "titleUrl";
+            this.titleUrl.Visible = false;
             // 
             // Main
             // 
@@ -511,12 +531,14 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button helpBtn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column2;
-        private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
         private System.Windows.Forms.ToolTip toolTips;
         private System.Windows.Forms.ComboBox saveAsOption;
         private System.Windows.Forms.CheckBox HighestQualityCB;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleNo;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleEpBegin;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleEpEnd;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleUrl;
     }
 }
 

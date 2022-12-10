@@ -105,9 +105,16 @@ namespace Kea
                     }
                 }
                 catch { continue; }
-                if (QueueTextbox.Text.Contains($"/{line.Substring(nameStart, nameEnd - nameStart - 1)}/")) { continue; }
-                QueueTextbox.Text += (QueueTextbox.Text == "") ? line : "\n" + line;
-                QueueGrid.Rows.Add(line.Substring(nameStart, nameEnd - nameStart - 1), "1", "end");
+                string toonName = line.Substring(nameStart, nameEnd - nameStart - 1);
+                var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName);
+
+                if (items.Count() != 0)
+                    continue;
+
+                Uri lineUri = new Uri(line);
+                int titleNo = Convert.ToInt32(System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("title_no"));
+
+                QueueGrid.Rows.Add(titleNo, toonName, "1", "end",line);
             }
             URLTextbox.Text = "";
         }
@@ -119,19 +126,19 @@ namespace Kea
                 int end = 0, start = 0;
                 try
                 {
-                    start = int.Parse(r.Cells[1].Value.ToString());
+                    start = int.Parse(r.Cells["titleEpBegin"].Value.ToString());
                     if (start < 1) { MessageBox.Show("The start chapter must be greater than zero!"); return; }
                 }
                 catch { MessageBox.Show("The start chapter must be a number!"); return; }
 
                 try
                 {
-                    end = int.Parse(r.Cells[2].Value.ToString());
+                    end = int.Parse(r.Cells["titleEpEnd"].Value.ToString());
                     if (end < 1) { MessageBox.Show("The end chapter must be greater than zero!"); return; }
                 }
                 catch
                 {
-                    if (r.Cells[2].Value.ToString() != "end") { MessageBox.Show("The end chapter must be a number or the word 'end'!"); return; }
+                    if (r.Cells["titleEpEnd"].Value.ToString() != "end") { MessageBox.Show("The end chapter must be a number or the word 'end'!"); return; }
                 }
                 if (end != 0 && end < start) { MessageBox.Show("The start chapter must smaller than the end chapter!"); return; }
             }
@@ -152,37 +159,26 @@ namespace Kea
                 savepathTB.Text = "please select a directory for saving";
                 return;
             }
-            if (QueueTextbox.Text == "") return;
+			if (QueueGrid.Rows.Count == 0) return;
 			
             toonList = new List<ToonListEntry>();
-			
-            List<string> lines = new List<string>();
 
-            lines.AddRange(QueueTextbox.Text.Split('\n'));
-            foreach (string line in lines)  //get all chapter links
-            {
-                await Task.Run(() => GetChapterAsync(line));
+            foreach (DataGridViewRow r in QueueGrid.Rows) //get all chapter links
+			{
+                await Task.Run(() => GetChapterAsync(r));
             }
             for (int t = 0; t < toonList.Count; t++)    //for each comic in queue...
             {
-				//toonList[t].toonInfo.startDownloadAtEpisode = QueueGrid.Rows[t].Cells[1].Value.ToString();
-				//toonList[t].toonInfo.stopDownloadAtEpisode = QueueGrid.Rows[t].Cells[2].Value.ToString();
-				//Workaround
-				//TODO: properly implement this.
-                ToonListEntry tList = toonList[t];
-                tList.toonInfo.toonTitleName = QueueGrid.Rows[t].Cells[0].Value.ToString();
-                tList.toonInfo.startDownloadAtEpisode = QueueGrid.Rows[t].Cells[1].Value.ToString();
-				tList.toonInfo.stopDownloadAtEpisode = QueueGrid.Rows[t].Cells[2].Value.ToString();
-				toonList[t] = tList;
 				await Task.Run(() => downloadComic(toonList[t]));
             }
             processInfo.Text = "done!";
             progressBar.Value = progressBar.Minimum;
         }
 
-        private async Task GetChapterAsync(string line)
+        private async Task GetChapterAsync(DataGridViewRow r)
         {
-            if (line == "") return;
+			string line = r.Cells["titleUrl"].Value.ToString();
+            if (String.IsNullOrEmpty(line) || String.IsNullOrWhiteSpace(line)) return;
 			
 			ToonListEntry currentToonEntry = new ToonListEntry();
             List<EpisodeListEntry> toonEpisodeList = new List<EpisodeListEntry>();
@@ -192,7 +188,10 @@ namespace Kea
             Uri baseUri = new Uri(line);
             string baseUrl = baseUri.GetLeftPart(UriPartial.Path);
 
-			currentToonEntry.toonInfo.titleNo = -1/*titleNo*/;
+			currentToonEntry.toonInfo.titleNo = Convert.ToInt32(r.Cells["titleNo"].Value.ToString());
+			currentToonEntry.toonInfo.toonTitleName = r.Cells["titleName"].Value.ToString();
+			currentToonEntry.toonInfo.startDownloadAtEpisode = r.Cells["titleEpBegin"].Value.ToString();
+			currentToonEntry.toonInfo.stopDownloadAtEpisode = r.Cells["titleEpEnd"].Value.ToString();
 
             using (WebClient client = new WebClient())
             {
@@ -496,22 +495,14 @@ namespace Kea
 
         private void removeAllBtn_Click(object sender, EventArgs e)
         {
-            QueueTextbox.Text = "";
             QueueGrid.Rows.Clear();
         }
 
         private void removeSelectedBtn_Click(object sender, EventArgs e)
         {
             if (QueueGrid.Rows.Count == 0) return;
-            List<string> lines = new List<string>();
-            lines.AddRange(QueueTextbox.Text.Split('\n'));
-            QueueTextbox.Text = "";
-            string name = QueueGrid.SelectedRows[0].Cells[0].Value.ToString();
+
             QueueGrid.Rows.RemoveAt(QueueGrid.SelectedRows[0].Index);
-            foreach (string line in lines)
-            {
-                if (!line.Contains($"/{name}/")) { QueueTextbox.Text += line + "\n"; }
-            }
         }
 
         private void DisableAllControls(Control con)
