@@ -276,7 +276,10 @@ namespace Kea
             for (int i = (int)startNr; i < endNr; i++)    //...and for each chapter in that comic...
             {
                 processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
-                using (WebClient client = new WebClient())
+				
+				if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {currentToon.episodeList[i].episodeTitle}"); }
+
+				using (WebClient client = new WebClient())
                 {
                     client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
                     IWebProxy proxy = WebRequest.DefaultWebProxy;    //add default proxy
@@ -287,29 +290,32 @@ namespace Kea
                     string html = client.DownloadString(currentToon.episodeList[i].url);
                     HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
                     doc.LoadHtml(html);
-                    HtmlNode div = doc.GetElementbyId("_imageList");
-                    HtmlNodeCollection childNodes = div.ChildNodes;
-                    if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {currentToon.episodeList[i].episodeTitle}"); }
-                    for (int j = 0; j < childNodes.Count; j++)  //...download all images!
-                    {
-                        if (childNodes[j].NodeType == HtmlNodeType.Element)
-                        {
-                            processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {j / 2} of chapter {i + 1}!"; }); //run on the UI thread
-                            client.Headers.Add("Referer", currentToon.episodeList[i].url);    //refresh the referer for each request!
-                            string imgName = $"{curName} Ch{i + 1}.{j / 2}";
-                            string imgUrl = childNodes[j].Attributes["data-url"].Value;
-							
-							if(HighestQualityCB.Checked)
-							{
-								//Remove the "?type=" query string from image url, this results in downloading the image with the same quality stored in the server.
-								imgUrl = RemoveQueryStringByKey(imgUrl, "type");
-							}
-							
-                            if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}\\{imgName}.jpg"); }
-                            else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
-                            processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(j / (float)childNodes.Count * 100); } catch { } });
-                        }
-                    }
+					
+					var episodeImgs = doc.DocumentNode.SelectNodes("//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[@class='viewer_lst']/div[@id='_imageList']/img");
+					//In case SelectNodes messes the order, sort by position in html document
+					HtmlNode[] imgList = episodeImgs.OrderBy(node => node.StreamPosition).ToArray();
+					int totalImgCount = imgList.Length;
+					int imageNo = 0;
+
+					foreach (HtmlNode imageNode in imgList)
+					{
+						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {imageNo} of chapter {i + 1}!"; }); //run on the UI thread
+						client.Headers.Add("Referer", currentToon.episodeList[i].url);    //refresh the referer for each request!
+
+						string imgName = $"{curName} Ch{i + 1}.{imageNo}";
+						string imgUrl = imageNode.Attributes["data-url"].Value;
+						if(HighestQualityCB.Checked)
+						{
+							//Remove the "?type=" query string from image url, this results in downloading the image with the same quality stored in the server.
+							imgUrl = RemoveQueryStringByKey(imgUrl, "type");
+						}
+
+						if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}\\{imgName}.jpg"); }
+						else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
+						
+						processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(imageNo / (float)totalImgCount * 100); } catch { } });
+						imageNo++;
+					}
                 }
                 if (saveAs == "PDF file")  //bundle images into PDF
                 {
