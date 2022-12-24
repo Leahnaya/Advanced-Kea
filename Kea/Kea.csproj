@@ -88,6 +88,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommonFiles\Globals.cs" />
+    <Compile Include="CommonFiles\Helpers.cs" />
+    <Compile Include="CommonFiles\Structures.cs" />
+    <Compile Include="CommonFiles\ToonHelpers.cs" />
     <Compile Include="Main.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -8,7 +8,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using HtmlAgilityPack;
@@ -16,38 +15,16 @@ using iTextSharp.text;
 using iTextSharp.text.pdf;
 using Image = iTextSharp.text.Image;
 using Rectangle = iTextSharp.text.Rectangle;
+using Kea.CommonFiles;
 
 namespace Kea
 {
 	public partial class Main : Form
 	{
-		public struct EpisodeListEntry
-		{
-			public string episodeSequence;
-			public int episodeNo;
-			public string episodeTitle;
-			public string url;
-		}
-
-		public struct ToonListEntryInfo
-		{
-			public int titleNo;
-			public string toonTitleName;
-			
-			public string startDownloadAtEpisode;
-			public string stopDownloadAtEpisode;
-		}
-
-		public struct ToonListEntry
-		{
-			public ToonListEntryInfo toonInfo;
-			public EpisodeListEntry[] episodeList;
-		}
-		
 		public const int WM_NCLBUTTONDOWN = 0xA1;
 		public const int HT_CAPTION = 0x2;
 
-		public List<ToonListEntry> toonList;
+		public List<Structures.ToonListEntry> toonList;
 		public string saveAs;
 
 		[System.Runtime.InteropServices.DllImport("user32.dll")]
@@ -162,7 +139,7 @@ namespace Kea
 			}
 			if (QueueGrid.Rows.Count == 0) return;
 			
-			toonList = new List<ToonListEntry>();
+			toonList = new List<Structures.ToonListEntry>();
 
 			foreach (DataGridViewRow r in QueueGrid.Rows) //get all chapter links
 			{
@@ -179,10 +156,10 @@ namespace Kea
 		private async Task GetChapterAsync(DataGridViewRow r)
 		{
 			string line = r.Cells["titleUrl"].Value.ToString();
-			if (String.IsNullOrEmpty(line) || String.IsNullOrWhiteSpace(line)) return;
+			if (Helpers.IsStringEmptyNullOrWhiteSpace(line)) return;
 			
-			ToonListEntry currentToonEntry = new ToonListEntry();
-			List<EpisodeListEntry> toonEpisodeList = new List<EpisodeListEntry>();
+			Structures.ToonListEntry currentToonEntry = new Structures.ToonListEntry();
+			List<Structures.EpisodeListEntry> toonEpisodeList = new List<Structures.EpisodeListEntry>();
 			
 			int urlEnd = (line.IndexOf('&') == -1) ? line.Length : line.IndexOf('&');
 			line = line.Substring(0, urlEnd);
@@ -212,7 +189,7 @@ namespace Kea
 
 					var htmlDoc = new HtmlAgilityPack.HtmlDocument();
 					htmlDoc.LoadHtml(html);
-					var episodeNodes = htmlDoc.DocumentNode.SelectNodes("//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[starts-with(@class,'detail_body')]/div[@class='detail_lst']/ul[@id='_listUl']/li[@class='_episodeItem']");
+					var episodeNodes = htmlDoc.DocumentNode.SelectNodes(Globals.episodeListItemHtmlXPath);
 
 					if(episodeNodes != null)
 					{
@@ -229,11 +206,11 @@ namespace Kea
 							string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
 							string episodeSequence = inner_a_node.SelectSingleNode("./span[@class='tx']").InnerHtml;
 							
-							EpisodeListEntry currentEpisode = new EpisodeListEntry();
+							Structures.EpisodeListEntry currentEpisode = new Structures.EpisodeListEntry();
 							
 							currentEpisode.episodeSequence = episodeSequence;
 							currentEpisode.episodeNo = episodeNo;
-							currentEpisode.episodeTitle = SanitizeEpisodeTitle(episodeTitle);
+							currentEpisode.episodeTitle = Helpers.SanitizeStringForFilePath(episodeTitle);
 							currentEpisode.url = url;
 							
 							toonEpisodeList.Add(currentEpisode);
@@ -241,10 +218,10 @@ namespace Kea
 					}
 
 					string nextPage = GetWebsiteNextPageUrl(htmlDoc);
-					if (String.IsNullOrEmpty(nextPage) || String.IsNullOrWhiteSpace(nextPage))
+					if (Helpers.IsStringEmptyNullOrWhiteSpace(nextPage))
 						break;
 
-					if (!IsValidURL(nextPage))
+					if (!Helpers.IsValidURL(nextPage))
 						nextPage = baseUri.GetLeftPart(UriPartial.Authority) + nextPage;
 
 					html = client.DownloadString(nextPage);
@@ -258,11 +235,11 @@ namespace Kea
 			toonList.Add(currentToonEntry);
 		}
 
-		private void downloadComic(ToonListEntry currentToon)
+		private void downloadComic(Structures.ToonListEntry currentToon)
 		{
 			string savePath = savepathTB.Text + @"\";
-			string curName = currentToon.toonInfo.toonTitleName;
-			curName += $"[{currentToon.toonInfo.titleNo.ToString("D6")}]";
+			string curName = ToonHelpers.GetToonSavePath(currentToon.toonInfo);
+
 			if (cartoonFoldersCB.Checked) { Directory.CreateDirectory(savePath + curName); savePath += curName; }
 
 			string suffix = "";
@@ -285,7 +262,7 @@ namespace Kea
 			{
 				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
-				if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}"); }
+				if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}"); }
 
 				using (WebClient client = new WebClient())
 				{
@@ -299,7 +276,7 @@ namespace Kea
 					HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
 					doc.LoadHtml(html);
 					
-					var episodeImgs = doc.DocumentNode.SelectNodes("//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[@class='viewer_lst']/div[@id='_imageList']/img");
+					var episodeImgs = doc.DocumentNode.SelectNodes(Globals.episodeImageHtmlXPath);
 					//In case SelectNodes messes the order, sort by position in html document
 					HtmlNode[] imgList = episodeImgs.OrderBy(node => node.StreamPosition).ToArray();
 					int totalImgCount = imgList.Length;
@@ -315,11 +292,11 @@ namespace Kea
 						if(HighestQualityCB.Checked)
 						{
 							//Remove the "?type=" query string from image url, this results in downloading the image with the same quality stored in the server.
-							imgUrl = RemoveQueryStringByKey(imgUrl, "type");
+							imgUrl = Helpers.RemoveQueryStringByKey(imgUrl, "type");
 							imgName += "[HQ]";
 						}
 
-						if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}\\{imgName}.jpg"); }
+						if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}\\{imgName}.jpg"); }
 						else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
 						
 						processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(imageNo / (float)totalImgCount * 100); } catch { } });
@@ -328,13 +305,13 @@ namespace Kea
 				}
 				if (saveAs == "PDF file")  //bundle images into PDF
 				{
-					DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}");
+					DirectoryInfo di = new DirectoryInfo($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}");
 					FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
 					string[] files = fileInfos.Select(o => o.FullName).ToArray();
 					Document doc = new Document();
 					try
 					{
-						PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.pdf", FileMode.Create));
+						PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.pdf", FileMode.Create));
 						doc.Open();
 						for (int j = 0; j < files.Length; j++)
 						{
@@ -347,11 +324,11 @@ namespace Kea
 					}
 					catch { Console.WriteLine("rip"); }
 					finally { doc.Close(); }
-					Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", true);
+					Directory.Delete($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", true);
 				}
 				else if (saveAs == "one image (may be lower in quality)") //bundle images into one long image
 				{
-					DirectoryInfo di = new DirectoryInfo($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}");
+					DirectoryInfo di = new DirectoryInfo($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}");
 					FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
 					string[] files = fileInfos.Select(o => o.FullName).ToArray();
 
@@ -374,55 +351,30 @@ namespace Kea
 								pointerHeight += images[k].Height;
 							}
 						}
-						if (finalHeight > 30000)
+						if (finalHeight > Globals.maxSingleImageHeight)
 						{
-							Bitmap resizedImage = ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - 30000) / finalHeight)), 30000);
-							resizedImage.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.png");
+							Bitmap resizedImage = Helpers.ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - Globals.maxSingleImageHeight) / finalHeight)), Globals.maxSingleImageHeight);
+							resizedImage.Save($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.png");
 						}
-						else bm.Save($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.png");
+						else bm.Save($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.png");
 					}
 					foreach (Bitmap image in images)
 					{
 						image.Dispose();
 					}
-					Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", true);
+					Directory.Delete($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", true);
 				}
 				else if (saveAs == "CBZ file")
 				{
-					ZipFile.CreateFromDirectory($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", $"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}.cbz");
-					Directory.Delete($"{savePath}\\({i + 1}) {currentToon.episodeList[i].episodeTitle}{suffix}", true);
+					ZipFile.CreateFromDirectory($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", $"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.cbz");
+					Directory.Delete($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", true);
 				}
 			}
-		}
-
-		public static Bitmap ResizeImage(System.Drawing.Image image, int width, int height)
-		{
-			System.Drawing.Rectangle destRect = new System.Drawing.Rectangle(0, 0, width, height);
-			Bitmap destImage = new Bitmap(width, height);
-
-			destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-			using (Graphics graphics = Graphics.FromImage(destImage))
-			{
-				graphics.CompositingMode = CompositingMode.SourceCopy;
-				graphics.CompositingQuality = CompositingQuality.HighQuality;
-				graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-				graphics.SmoothingMode = SmoothingMode.HighQuality;
-				graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-				using (ImageAttributes wrapMode = new ImageAttributes())
-				{
-					wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-					graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-				}
-			}
-
-			return destImage;
 		}
 
 		public static string GetWebsiteNextPageUrl(HtmlAgilityPack.HtmlDocument htmlDoc)
 		{
-			var pageNodes = htmlDoc.DocumentNode.SelectNodes("//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[starts-with(@class,'detail_body')]/div[@class='detail_lst']/div[@class='paginate']/a");
+			var pageNodes = htmlDoc.DocumentNode.SelectNodes(Globals.episodeListPaginatorXPath);
 			var nextPageUrl = "";
 
 			if (pageNodes == null)
@@ -445,42 +397,6 @@ namespace Kea
 				}
 			}
 			return nextPageUrl;
-		}
-
-		public static bool IsValidURL(string URL)
-		{
-			string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";
-			Regex Rgx = new Regex(Pattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-			return Rgx.IsMatch(URL);
-		}
-
-		public static string RemoveQueryStringByKey(string url, string key)
-		{
-			var uri = new Uri(url);
-
-			// this gets all the query string key value pairs as a collection
-			var newQueryString = System.Web.HttpUtility.ParseQueryString(uri.Query);
-
-			// this removes the key if exists
-			newQueryString.Remove(key);
-
-			// this gets the page path from root without QueryString
-			string pagePathWithoutQueryString = uri.GetLeftPart(UriPartial.Path);
-
-			return newQueryString.Count > 0
-				? String.Format("{0}?{1}", pagePathWithoutQueryString, newQueryString)
-				: pagePathWithoutQueryString;
-		}
-
-		public static string SanitizeEpisodeTitle(string episodeTitle)
-		{
-			string newepisodeTitle = episodeTitle;
-			string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-			foreach (char c in invalidChars)
-			{
-				newepisodeTitle = newepisodeTitle.Replace(c.ToString(), "");
-			}
-			return newepisodeTitle;
 		}
 
 		#region visuals
