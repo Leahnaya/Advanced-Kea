@@ -237,10 +237,20 @@ namespace Kea
 
 		private void downloadComic(Structures.ToonListEntry currentToon)
 		{
-			string savePath = savepathTB.Text + @"\";
-			string curName = ToonHelpers.GetToonSavePath(currentToon.toonInfo);
+			string baseSavePath = savepathTB.Text + @"\";
+			string comicSavePath = baseSavePath + ToonHelpers.GetToonSavePath(currentToon.toonInfo);
 
-			if (cartoonFoldersCB.Checked) { Directory.CreateDirectory(savePath + curName); savePath += curName; }
+			if (cartoonFoldersCB.Checked)
+			{
+				//If checked, add the path separator & create new directory
+				comicSavePath += @"\";
+				Directory.CreateDirectory(comicSavePath); 
+			}
+			else
+			{
+				//separation isn't necessary here
+				//comicSavePath += "_";
+			}
 
 			string suffix = "";
 			if(HighestQualityCB.Checked)
@@ -262,7 +272,17 @@ namespace Kea
 			{
 				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
-				if (chapterFoldersCB.Checked || saveAs != "multiple images") { Directory.CreateDirectory(savePath + @"\" + $"{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}"); }
+				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix);
+				if (chapterFoldersCB.Checked || saveAs != "multiple images")
+				{
+					//If checked, add the path separator & create new directory
+					episodeSavePath += @"\";
+					Directory.CreateDirectory(episodeSavePath);
+				}
+				else
+				{
+					episodeSavePath += "_"; // separate between episode name & image number
+				}
 
 				using (WebClient client = new WebClient())
 				{
@@ -287,7 +307,7 @@ namespace Kea
 						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {imageNo} of chapter {i + 1}!"; }); //run on the UI thread
 						client.Headers.Add("Referer", currentToon.episodeList[i].url);	//refresh the referer for each request!
 
-						string imgName = $"{curName} Ch{i + 1}.{imageNo}";
+						string imgName = imageNo.ToString("D5");
 						string imgUrl = imageNode.Attributes["data-url"].Value;
 						if(HighestQualityCB.Checked)
 						{
@@ -296,8 +316,7 @@ namespace Kea
 							imgName += "[HQ]";
 						}
 
-						if (chapterFoldersCB.Checked || saveAs != "multiple images") { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}\\{imgName}.jpg"); }
-						else { client.DownloadFile(new Uri(imgUrl), $"{savePath}\\{imgName}.jpg"); }
+						client.DownloadFile(new Uri(imgUrl), $"{episodeSavePath}{imgName}.jpg");
 						
 						processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(imageNo / (float)totalImgCount * 100); } catch { } });
 						imageNo++;
@@ -305,13 +324,13 @@ namespace Kea
 				}
 				if (saveAs == "PDF file")  //bundle images into PDF
 				{
-					DirectoryInfo di = new DirectoryInfo($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}");
+					DirectoryInfo di = new DirectoryInfo(episodeSavePath);
 					FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
 					string[] files = fileInfos.Select(o => o.FullName).ToArray();
 					Document doc = new Document();
 					try
 					{
-						PdfWriter.GetInstance(doc, new FileStream($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.pdf", FileMode.Create));
+						PdfWriter.GetInstance(doc, new FileStream($"{episodeSavePath}.pdf", FileMode.Create));
 						doc.Open();
 						for (int j = 0; j < files.Length; j++)
 						{
@@ -324,11 +343,11 @@ namespace Kea
 					}
 					catch { Console.WriteLine("rip"); }
 					finally { doc.Close(); }
-					Directory.Delete($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", true);
+					Directory.Delete(episodeSavePath, true);
 				}
 				else if (saveAs == "one image (may be lower in quality)") //bundle images into one long image
 				{
-					DirectoryInfo di = new DirectoryInfo($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}");
+					DirectoryInfo di = new DirectoryInfo(episodeSavePath);
 					FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
 					string[] files = fileInfos.Select(o => o.FullName).ToArray();
 
@@ -354,20 +373,20 @@ namespace Kea
 						if (finalHeight > Globals.maxSingleImageHeight)
 						{
 							Bitmap resizedImage = Helpers.ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - Globals.maxSingleImageHeight) / finalHeight)), Globals.maxSingleImageHeight);
-							resizedImage.Save($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.png");
+							resizedImage.Save($"{episodeSavePath}.png");
 						}
-						else bm.Save($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.png");
+						else bm.Save($"{episodeSavePath}.png");
 					}
 					foreach (Bitmap image in images)
 					{
 						image.Dispose();
 					}
-					Directory.Delete($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", true);
+					Directory.Delete($"{episodeSavePath}", true);
 				}
 				else if (saveAs == "CBZ file")
 				{
-					ZipFile.CreateFromDirectory($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", $"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}.cbz");
-					Directory.Delete($"{savePath}\\{ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix)}", true);
+					ZipFile.CreateFromDirectory(episodeSavePath, $"{episodeSavePath}.cbz");
+					Directory.Delete(episodeSavePath, true);
 				}
 			}
 		}
