@@ -320,13 +320,23 @@ namespace Kea
 							imgUrl = Helpers.RemoveQueryStringByKey(imgUrl, "type");
 							imgName += "[HQ]";
 						}
+						
+						Structures.downloadedToonChapterFileInfo fileInfo = new Structures.downloadedToonChapterFileInfo();
+						
 						string imgExtension = Helpers.GetFileExtensionFromUrl(imgUrl);
 						
 						string imgSaveName = $"{imgName}{imgExtension}";
 						string imgSavePath = $"{episodeSavePath}{imgSaveName}";
-						client.DownloadFile(new Uri(imgUrl), imgSavePath);
-						
-						Structures.downloadedToonChapterFileInfo fileInfo = new Structures.downloadedToonChapterFileInfo();
+
+						try{ client.DownloadFile(new Uri(imgUrl), imgSavePath); }
+						catch(WebException ex) when ((ex.Response as HttpWebResponse)?.StatusCode == HttpStatusCode.NotFound)
+						{
+							// handle file not found
+							imgSaveName = $"{imgName}_failed.png";
+							imgSavePath = $"{episodeSavePath}{imgSaveName}";
+							ToonHelpers.DrawAndSaveNotFoundImage(imageNo,imgSavePath);
+						}
+
 						fileInfo.filePath = imgSavePath;
 						fileInfo.filePathInArchive = imgSaveName;
 						downloadedImages.Add(fileInfo);

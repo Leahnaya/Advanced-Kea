@@ -10,8 +10,6 @@ using System.IO;
 using System.IO.Compression;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
-using Image = iTextSharp.text.Image;
-using Rectangle = iTextSharp.text.Rectangle;
 
 namespace Kea.CommonFiles
 {
@@ -32,9 +30,9 @@ namespace Kea.CommonFiles
 					doc.Open();
 					for (int j = 0; j < files.Length; j++)
 					{
-						Image img = Image.GetInstance(files[j].filePath);
+						iTextSharp.text.Image img = iTextSharp.text.Image.GetInstance(files[j].filePath);
 						img.SetAbsolutePosition(0, 0);
-						doc.SetPageSize(new Rectangle(img.Width, img.Height));
+						doc.SetPageSize(new iTextSharp.text.Rectangle(img.Width, img.Height));
 						doc.NewPage();
 						doc.Add(img);
 					}
@@ -105,5 +103,48 @@ namespace Kea.CommonFiles
 			return $"({i + 1}) {episodeInfo.episodeTitle}{suffix}";
 		}
 		
+		public static void DrawAndSaveNotFoundImage(int imageNumber, string savePath)
+		{
+			GraphicsPath gp = new GraphicsPath();
+
+            Bitmap bm = new Bitmap(400, 200);
+            int radius = 25;
+            int diameter = radius * 2;
+            Size size = new Size(diameter, diameter);
+            System.Drawing.Rectangle bounds = new System.Drawing.Rectangle(5,5,390,190);
+            System.Drawing.Rectangle arc = new System.Drawing.Rectangle(bounds.Location, size);
+
+            // top left arc  
+            gp.AddArc(arc, 180, 90);
+
+            // top right arc  
+            arc.X = bounds.Right - diameter;
+            gp.AddArc(arc, 270, 90);
+
+            // bottom right arc  
+            arc.Y = bounds.Bottom - diameter;
+            gp.AddArc(arc, 0, 90);
+
+            // bottom left arc 
+            arc.X = bounds.Left;
+            gp.AddArc(arc, 90, 90);
+
+            gp.CloseFigure();
+
+            LinearGradientBrush brush = new LinearGradientBrush(new Point(5, 5), new Point(395, 195), Color.OrangeRed, Color.DarkRed);
+            LinearGradientBrush brush2 = new LinearGradientBrush(new Point(0, 0), new Point(400, 200), Color.Black, Color.White);
+
+            using (Graphics g = Graphics.FromImage(bm))
+            {
+                g.DrawPath(new Pen(Color.Black, 5), gp);
+                g.FillRectangle(brush2, new System.Drawing.Rectangle(0, 0, 400, 200));
+                g.FillPath(brush, gp);
+                g.DrawString("Image 0000 not found!", new System.Drawing.Font(FontFamily.GenericSansSerif, 35, FontStyle.Bold | FontStyle.Strikeout), Brushes.White,
+                    new System.Drawing.Rectangle(5, 5, 390, 190),
+                    new StringFormat { Alignment = StringAlignment.Center,LineAlignment = StringAlignment.Center });
+                g.Save();
+            }
+            bm.Save(savePath);
+		}
 	}
 }
