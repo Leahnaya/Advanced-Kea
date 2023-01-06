@@ -139,7 +139,7 @@ namespace Kea.CommonFiles
                 g.DrawPath(new Pen(Color.Black, 5), gp);
                 g.FillRectangle(brush2, new System.Drawing.Rectangle(0, 0, 400, 200));
                 g.FillPath(brush, gp);
-                g.DrawString("Image 0000 not found!", new System.Drawing.Font(FontFamily.GenericSansSerif, 35, FontStyle.Bold | FontStyle.Strikeout), Brushes.White,
+                g.DrawString($"Image {imageNumber.ToString("D5")} not found!", new System.Drawing.Font(FontFamily.GenericSansSerif, 35, FontStyle.Bold | FontStyle.Strikeout), Brushes.White,
                     new System.Drawing.Rectangle(5, 5, 390, 190),
                     new StringFormat { Alignment = StringAlignment.Center,LineAlignment = StringAlignment.Center });
                 g.Save();
