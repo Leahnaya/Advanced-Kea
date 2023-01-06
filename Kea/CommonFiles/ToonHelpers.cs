@@ -20,13 +20,14 @@ namespace Kea.CommonFiles
 		public static void createBundledFile(string saveAs, string episodeSavePath, List<Structures.downloadedToonChapterFileInfo> downloadedFiles )
 		{
 			Structures.downloadedToonChapterFileInfo[] files = downloadedFiles.ToArray();
+			string bundleExtenstion = GetBundleExtension(saveAs);
 			
 			if (saveAs == "PDF file")  //bundle images into PDF
 			{
 				Document doc = new Document();
 				try
 				{
-					PdfWriter.GetInstance(doc, new FileStream($"{episodeSavePath}.pdf", FileMode.Create));
+					PdfWriter.GetInstance(doc, new FileStream($"{episodeSavePath}{bundleExtenstion}", FileMode.Create));
 					doc.Open();
 					for (int j = 0; j < files.Length; j++)
 					{
@@ -65,9 +66,9 @@ namespace Kea.CommonFiles
 					if (finalHeight > Globals.maxSingleImageHeight)
 					{
 						Bitmap resizedImage = Helpers.ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - Globals.maxSingleImageHeight) / finalHeight)), Globals.maxSingleImageHeight);
-						resizedImage.Save($"{episodeSavePath}.png");
+						resizedImage.Save($"{episodeSavePath}{bundleExtenstion}");
 					}
-					else bm.Save($"{episodeSavePath}.png");
+					else bm.Save($"{episodeSavePath}{bundleExtenstion}");
 				}
 				foreach (Bitmap image in images)
 				{
@@ -76,7 +77,7 @@ namespace Kea.CommonFiles
 			}
 			else if (saveAs == "CBZ file")
 			{
-				using (FileStream zipToOpen = new FileStream($"{episodeSavePath}.cbz", FileMode.Create))
+				using (FileStream zipToOpen = new FileStream($"{episodeSavePath}{bundleExtenstion}", FileMode.Create))
 				{
 					using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Update))
 					{
@@ -87,6 +88,18 @@ namespace Kea.CommonFiles
 					}
 				}
 			}
+		}
+		
+		public static string GetBundleExtension(string saveAs)
+		{
+			if( saveAs == "PDF file" )
+				return ".pdf";
+			if( saveAs == "one image (may be lower in quality)" )
+				return ".png";
+			if( saveAs == "CBZ file" )
+				return ".cbz";
+			
+			return "";
 		}
 		
 		public static string GetToonSavePath(Structures.ToonListEntryInfo toonInfo)
