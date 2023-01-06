@@ -8,6 +8,12 @@ namespace Kea.CommonFiles
 {
 	public class Structures
 	{
+		public struct downloadedToonChapterFileInfo
+        {
+            public string filePath;
+            public string filePathInArchive;
+        }
+
 		public struct EpisodeListEntry
 		{
 			public string episodeSequence;

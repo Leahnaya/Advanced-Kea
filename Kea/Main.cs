@@ -273,6 +273,7 @@ namespace Kea
 				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
 				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix);
+				string archiveSavePath = episodeSavePath; // shouldn't end with /
 				if (chapterFoldersCB.Checked || saveAs != "multiple images")
 				{
 					//If checked, add the path separator & create new directory
@@ -283,7 +284,9 @@ namespace Kea
 				{
 					episodeSavePath += "_"; // separate between episode name & image number
 				}
-
+				
+				List<Structures.downloadedToonChapterFileInfo> downloadedImages = new List<Structures.downloadedToonChapterFileInfo>();
+				
 				using (WebClient client = new WebClient())
 				{
 					client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
@@ -301,7 +304,7 @@ namespace Kea
 					HtmlNode[] imgList = episodeImgs.OrderBy(node => node.StreamPosition).ToArray();
 					int totalImgCount = imgList.Length;
 					int imageNo = 0;
-
+					
 					foreach (HtmlNode imageNode in imgList)
 					{
 						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {imageNo} of chapter {i + 1}!"; }); //run on the UI thread
@@ -315,79 +318,21 @@ namespace Kea
 							imgUrl = Helpers.RemoveQueryStringByKey(imgUrl, "type");
 							imgName += "[HQ]";
 						}
-
-						client.DownloadFile(new Uri(imgUrl), $"{episodeSavePath}{imgName}.jpg");
+						string imgSaveName = $"{imgName}.jpg";
+						string imgSavePath = $"{episodeSavePath}{imgSaveName}";
+						client.DownloadFile(new Uri(imgUrl), imgSavePath);
+						
+						Structures.downloadedToonChapterFileInfo fileInfo = new Structures.downloadedToonChapterFileInfo();
+						fileInfo.filePath = imgSavePath;
+						fileInfo.filePathInArchive = imgSaveName;
+						downloadedImages.Add(fileInfo);
 						
 						processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(imageNo / (float)totalImgCount * 100); } catch { } });
 						imageNo++;
 					}
 				}
-				if (saveAs == "PDF file")  //bundle images into PDF
-				{
-					DirectoryInfo di = new DirectoryInfo(episodeSavePath);
-					FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
-					string[] files = fileInfos.Select(o => o.FullName).ToArray();
-					Document doc = new Document();
-					try
-					{
-						PdfWriter.GetInstance(doc, new FileStream($"{episodeSavePath}.pdf", FileMode.Create));
-						doc.Open();
-						for (int j = 0; j < files.Length; j++)
-						{
-							Image img = Image.GetInstance(files[j]);
-							img.SetAbsolutePosition(0, 0);
-							doc.SetPageSize(new Rectangle(img.Width, img.Height));
-							doc.NewPage();
-							doc.Add(img);
-						}
-					}
-					catch { Console.WriteLine("rip"); }
-					finally { doc.Close(); }
-					Directory.Delete(episodeSavePath, true);
-				}
-				else if (saveAs == "one image (may be lower in quality)") //bundle images into one long image
-				{
-					DirectoryInfo di = new DirectoryInfo(episodeSavePath);
-					FileInfo[] fileInfos = di.GetFiles("*.jpg").OrderBy(fi => fi.CreationTime).ToArray();
-					string[] files = fileInfos.Select(o => o.FullName).ToArray();
-
-					Bitmap[] images = new Bitmap[files.Length];
-					int finalHeight = 0;
-					for (int j = 0; j < images.Length; j++)
-					{
-						images[j] = new Bitmap(files[j]);
-						finalHeight += images[j].Height;
-					}
-
-					using (Bitmap bm = new Bitmap(images[0].Width, finalHeight))
-					{
-						int pointerHeight = 0;
-						using (Graphics g = Graphics.FromImage(bm))
-						{
-							for (int k = 0; k < images.Length; k++)
-							{
-								g.DrawImage(images[k], 0, pointerHeight);
-								pointerHeight += images[k].Height;
-							}
-						}
-						if (finalHeight > Globals.maxSingleImageHeight)
-						{
-							Bitmap resizedImage = Helpers.ResizeImage(bm, (int)(images[0].Width * (1.0 - (float)(finalHeight - Globals.maxSingleImageHeight) / finalHeight)), Globals.maxSingleImageHeight);
-							resizedImage.Save($"{episodeSavePath}.png");
-						}
-						else bm.Save($"{episodeSavePath}.png");
-					}
-					foreach (Bitmap image in images)
-					{
-						image.Dispose();
-					}
-					Directory.Delete($"{episodeSavePath}", true);
-				}
-				else if (saveAs == "CBZ file")
-				{
-					ZipFile.CreateFromDirectory(episodeSavePath, $"{episodeSavePath}.cbz");
-					Directory.Delete(episodeSavePath, true);
-				}
+				
+				ToonHelpers.createBundledFile(saveAs, archiveSavePath, downloadedImages );
 			}
 		}
 
