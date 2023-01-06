@@ -13,6 +13,13 @@ namespace Kea
 	class Helpers
 	{
 		//General Helpers
+		public static string GetFileExtensionFromUrl(string url)
+        {
+            url = url.Split('?')[0];
+            url = url.Split('/').Last();
+            return url.Contains('.') ? url.Substring(url.LastIndexOf('.')) : "";
+        }
+		
 		public static bool IsStringEmptyNullOrWhiteSpace(string str)
 		{
 			return (String.IsNullOrEmpty(str) || String.IsNullOrWhiteSpace(str));

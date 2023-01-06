@@ -318,7 +318,9 @@ namespace Kea
 							imgUrl = Helpers.RemoveQueryStringByKey(imgUrl, "type");
 							imgName += "[HQ]";
 						}
-						string imgSaveName = $"{imgName}.jpg";
+						string imgExtension = Helpers.GetFileExtensionFromUrl(imgUrl);
+						
+						string imgSaveName = $"{imgName}{imgExtension}";
 						string imgSavePath = $"{episodeSavePath}{imgSaveName}";
 						client.DownloadFile(new Uri(imgUrl), imgSavePath);
 						
