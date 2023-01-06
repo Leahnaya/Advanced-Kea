@@ -335,6 +335,7 @@ namespace Kea
 							imgSaveName = $"{imgName}_failed.png";
 							imgSavePath = $"{episodeSavePath}{imgSaveName}";
 							ToonHelpers.DrawAndSaveNotFoundImage(imageNo,imgSavePath);
+							archiveSavePath += "_failed";
 						}
 
 						fileInfo.filePath = imgSavePath;
