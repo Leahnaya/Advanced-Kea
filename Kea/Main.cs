@@ -99,6 +99,12 @@ namespace Kea
 
 		private async void startBtn_Click(object sender, EventArgs e)
 		{
+            if (skipDownloadedChaptersCB.Checked && saveAs == "multiple images")
+            {
+                MessageBox.Show("Skipping downloaded chapters cannot be used while saving as \"multiple images\" ");
+                return;
+            }
+
 			foreach (DataGridViewRow r in QueueGrid.Rows)
 			{
 				int end = 0, start = 0;
@@ -274,6 +280,17 @@ namespace Kea
 				
 				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix);
 				string archiveSavePath = episodeSavePath; // shouldn't end with /
+				
+				if( skipDownloadedChaptersCB.Checked )
+				{
+					string bundlePath = $"{archiveSavePath}{ToonHelpers.GetBundleExtension(saveAs)}";
+					if (File.Exists(bundlePath))
+					{
+						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] Skipping the chapter";}); //run on the UI thread
+						continue;
+					}
+				}
+				
 				bool chapterDirectoryWasCreated = false;
 				if (chapterFoldersCB.Checked || saveAs != "multiple images")
 				{

@@ -41,6 +41,11 @@
             this.label4 = new System.Windows.Forms.Label();
             this.processInfo = new System.Windows.Forms.TextBox();
             this.QueueGrid = new System.Windows.Forms.DataGridView();
+            this.titleNo = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleEpBegin = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleEpEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.QueueTextbox = new System.Windows.Forms.RichTextBox();
             this.savepathTB = new System.Windows.Forms.TextBox();
             this.selectFolderBtn = new System.Windows.Forms.Button();
@@ -58,11 +63,7 @@
             this.toolTips = new System.Windows.Forms.ToolTip(this.components);
             this.saveAsOption = new System.Windows.Forms.ComboBox();
             this.HighestQualityCB = new System.Windows.Forms.CheckBox();
-            this.titleNo = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleEpBegin = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleEpEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.skipDownloadedChaptersCB = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.HandleBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exitBtn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.QueueGrid)).BeginInit();
@@ -133,7 +134,7 @@
             this.startBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.startBtn.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.startBtn.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
-            this.startBtn.Location = new System.Drawing.Point(12, 496);
+            this.startBtn.Location = new System.Drawing.Point(12, 519);
             this.startBtn.Name = "startBtn";
             this.startBtn.Size = new System.Drawing.Size(520, 26);
             this.startBtn.TabIndex = 8;
@@ -145,7 +146,7 @@
             // 
             this.progressBar.BackColor = System.Drawing.Color.White;
             this.progressBar.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.progressBar.Location = new System.Drawing.Point(0, 554);
+            this.progressBar.Location = new System.Drawing.Point(0, 575);
             this.progressBar.Name = "progressBar";
             this.progressBar.Size = new System.Drawing.Size(544, 20);
             this.progressBar.Step = 1;
@@ -171,7 +172,7 @@
             this.label4.AutoSize = true;
             this.label4.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label4.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
-            this.label4.Location = new System.Drawing.Point(9, 530);
+            this.label4.Location = new System.Drawing.Point(9, 553);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(131, 16);
             this.label4.TabIndex = 12;
@@ -179,7 +180,7 @@
             // 
             // processInfo
             // 
-            this.processInfo.Location = new System.Drawing.Point(154, 528);
+            this.processInfo.Location = new System.Drawing.Point(154, 551);
             this.processInfo.Name = "processInfo";
             this.processInfo.ReadOnly = true;
             this.processInfo.Size = new System.Drawing.Size(378, 20);
@@ -209,6 +210,44 @@
             this.QueueGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.QueueGrid.Size = new System.Drawing.Size(520, 146);
             this.QueueGrid.TabIndex = 14;
+            // 
+            // titleNo
+            // 
+            this.titleNo.Frozen = true;
+            this.titleNo.HeaderText = "Title No.";
+            this.titleNo.Name = "titleNo";
+            this.titleNo.ReadOnly = true;
+            this.titleNo.Width = 80;
+            // 
+            // titleName
+            // 
+            this.titleName.Frozen = true;
+            this.titleName.HeaderText = "Name";
+            this.titleName.Name = "titleName";
+            this.titleName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleName.Width = 160;
+            // 
+            // titleEpBegin
+            // 
+            this.titleEpBegin.Frozen = true;
+            this.titleEpBegin.HeaderText = "start at chapter";
+            this.titleEpBegin.Name = "titleEpBegin";
+            this.titleEpBegin.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // titleEpEnd
+            // 
+            this.titleEpEnd.Frozen = true;
+            this.titleEpEnd.HeaderText = "End at chapter";
+            this.titleEpEnd.Name = "titleEpEnd";
+            this.titleEpEnd.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleEpEnd.Width = 160;
+            // 
+            // titleUrl
+            // 
+            this.titleUrl.Frozen = true;
+            this.titleUrl.HeaderText = "url";
+            this.titleUrl.Name = "titleUrl";
+            this.titleUrl.Visible = false;
             // 
             // QueueTextbox
             // 
@@ -414,55 +453,32 @@
             this.HighestQualityCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.HighestQualityCB.Location = new System.Drawing.Point(390, 458);
             this.HighestQualityCB.Name = "HighestQualityCB";
-            this.HighestQualityCB.Size = new System.Drawing.Size(97, 17);
+            this.HighestQualityCB.Size = new System.Drawing.Size(117, 20);
             this.HighestQualityCB.TabIndex = 31;
             this.HighestQualityCB.Text = "Highest Quality";
             this.HighestQualityCB.UseVisualStyleBackColor = true;
             // 
-            // titleNo
+            // skipDownloadedChaptersCB
             // 
-            this.titleNo.Frozen = true;
-            this.titleNo.HeaderText = "Title No.";
-            this.titleNo.Name = "titleNo";
-            this.titleNo.ReadOnly = true;
-            this.titleNo.Width = 80;
-            // 
-            // titleName
-            // 
-            this.titleName.Frozen = true;
-            this.titleName.HeaderText = "Name";
-            this.titleName.Name = "titleName";
-            this.titleName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.titleName.Width = 160;
-            // 
-            // titleEpBegin
-            // 
-            this.titleEpBegin.Frozen = true;
-            this.titleEpBegin.HeaderText = "start at chapter";
-            this.titleEpBegin.Name = "titleEpBegin";
-            this.titleEpBegin.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            // 
-            // titleEpEnd
-            // 
-            this.titleEpEnd.Frozen = true;
-            this.titleEpEnd.HeaderText = "End at chapter";
-            this.titleEpEnd.Name = "titleEpEnd";
-            this.titleEpEnd.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.titleEpEnd.Width = 160;
-            // 
-            // titleUrl
-            // 
-            this.titleUrl.Frozen = true;
-            this.titleUrl.HeaderText = "url";
-            this.titleUrl.Name = "titleUrl";
-            this.titleUrl.Visible = false;
+            this.skipDownloadedChaptersCB.AutoSize = true;
+            this.skipDownloadedChaptersCB.Checked = true;
+			this.skipDownloadedChaptersCB.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.skipDownloadedChaptersCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
+            this.skipDownloadedChaptersCB.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.skipDownloadedChaptersCB.Location = new System.Drawing.Point(154, 485);
+            this.skipDownloadedChaptersCB.Name = "skipDownloadedChaptersCB";
+            this.skipDownloadedChaptersCB.Size = new System.Drawing.Size(152, 17);
+            this.skipDownloadedChaptersCB.TabIndex = 32;
+            this.skipDownloadedChaptersCB.Text = "Skip downloaded chapters";
+            this.skipDownloadedChaptersCB.UseVisualStyleBackColor = true;
             // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(176)))), ((int)(((byte)(193)))), ((int)(((byte)(185)))));
-            this.ClientSize = new System.Drawing.Size(544, 574);
+            this.ClientSize = new System.Drawing.Size(544, 595);
+            this.Controls.Add(this.skipDownloadedChaptersCB);
             this.Controls.Add(this.HighestQualityCB);
             this.Controls.Add(this.saveAsOption);
             this.Controls.Add(this.helpBtn);
@@ -539,6 +555,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn titleEpBegin;
         private System.Windows.Forms.DataGridViewTextBoxColumn titleEpEnd;
         private System.Windows.Forms.DataGridViewTextBoxColumn titleUrl;
+        private System.Windows.Forms.CheckBox skipDownloadedChaptersCB;
     }
 }
 
