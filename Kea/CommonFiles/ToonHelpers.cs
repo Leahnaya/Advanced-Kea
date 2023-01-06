@@ -41,7 +41,6 @@ namespace Kea.CommonFiles
 				}
 				catch { Console.WriteLine("rip"); }
 				finally { doc.Close(); }
-				Directory.Delete(episodeSavePath, true);
 			}
 			else if (saveAs == "one image (may be lower in quality)") //bundle images into one long image
 			{
@@ -76,7 +75,6 @@ namespace Kea.CommonFiles
 				{
 					image.Dispose();
 				}
-				Directory.Delete($"{episodeSavePath}", true);
 			}
 			else if (saveAs == "CBZ file")
 			{
@@ -90,7 +88,6 @@ namespace Kea.CommonFiles
 						}
 					}
 				}
-				Directory.Delete($"{episodeSavePath}", true);
 			}
 		}
 		

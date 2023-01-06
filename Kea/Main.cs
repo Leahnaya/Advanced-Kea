@@ -274,11 +274,13 @@ namespace Kea
 				
 				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix);
 				string archiveSavePath = episodeSavePath; // shouldn't end with /
+				bool chapterDirectoryWasCreated = false;
 				if (chapterFoldersCB.Checked || saveAs != "multiple images")
 				{
 					//If checked, add the path separator & create new directory
 					episodeSavePath += @"\";
 					Directory.CreateDirectory(episodeSavePath);
+					chapterDirectoryWasCreated = true;
 				}
 				else
 				{
@@ -335,6 +337,10 @@ namespace Kea
 				}
 				
 				ToonHelpers.createBundledFile(saveAs, archiveSavePath, downloadedImages );
+				if( chapterDirectoryWasCreated && ( saveAs == "PDF file" || saveAs == "CBZ file" || saveAs == "one image (may be lower in quality)" ) )
+				{
+					Directory.Delete(episodeSavePath, true);
+				}
 			}
 		}
 
