@@ -109,11 +109,11 @@ namespace Kea.CommonFiles
 			return $"{sanitizedTitleName}[{toonInfo.titleNo.ToString("D6")}]";
 		}
 		
-		public static string GetToonEpisodeSavePath(int i,Structures.EpisodeListEntry episodeInfo,string suffix)
+		public static string GetToonEpisodeSavePath(Structures.EpisodeListEntry episodeInfo,string suffix)
 		{
 			//Must return without any slashes at the end
 			//string BasePath = GetToonSavePath(episodeInfo.toonInfo); // commented for Refactor.
-			return $"({i + 1}) {episodeInfo.episodeTitle}{suffix}";
+			return $"({episodeInfo.episodeNo}) {episodeInfo.episodeTitle}{suffix}";
 		}
 		
 		public static void DrawAndSaveNotFoundImage(int imageNumber, string savePath)

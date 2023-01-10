@@ -287,7 +287,7 @@ namespace Kea
 				}
 				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of chapter {episodeNo}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
-				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(episodeNo,currentToon.episodeList[i],suffix);
+				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(currentToon.episodeList[i],suffix);
 				string archiveSavePath = episodeSavePath; // shouldn't end with /
 				
 				if( skipDownloadedChaptersCB.Checked )
