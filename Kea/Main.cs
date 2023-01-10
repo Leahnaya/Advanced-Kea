@@ -90,24 +90,24 @@ namespace Kea
 				Uri lineUri = new Uri(line);
 				int titleNo = Convert.ToInt32(System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("title_no"));
 
-                string languageCode = System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("language");
+				string languageCode = System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("language");
 
-                if (Helpers.IsStringEmptyNullOrWhiteSpace(languageCode))
-                {
-                    languageCode = "default";
-                }
+				if (Helpers.IsStringEmptyNullOrWhiteSpace(languageCode))
+				{
+					languageCode = "default";
+				}
 				else
 				{
 					//Query used by Kea to download fan translations, webtoons doesn't support this query
 					line = Helpers.RemoveQueryStringByKey(line, "language");
 				}
 
-                string teamVersion = System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("teamVersion");
+				string teamVersion = System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("teamVersion");
 
-                if (Helpers.IsStringEmptyNullOrWhiteSpace(teamVersion))
-                {
-                    teamVersion = "default";
-                }
+				if (Helpers.IsStringEmptyNullOrWhiteSpace(teamVersion))
+				{
+					teamVersion = "default";
+				}
 				else
 				{
 					//Query used by Kea to download fan translations, webtoons doesn't support this query
@@ -120,7 +120,7 @@ namespace Kea
 					continue;
 				}
 
-                var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName && Convert.ToInt32(row.Cells["titleNo"].Value.ToString()) == titleNo && row.Cells["titleTranslationLanguageCode"].Value.ToString() == languageCode && row.Cells["titleTranslationTeamVersion"].Value.ToString() == teamVersion);
+				var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName && Convert.ToInt32(row.Cells["titleNo"].Value.ToString()) == titleNo && row.Cells["titleTranslationLanguageCode"].Value.ToString() == languageCode && row.Cells["titleTranslationTeamVersion"].Value.ToString() == teamVersion);
 
 				if (items.Count() != 0)
 					continue;
@@ -132,11 +132,11 @@ namespace Kea
 
 		private async void startBtn_Click(object sender, EventArgs e)
 		{
-            if (skipDownloadedChaptersCB.Checked && saveAs == "multiple images")
-            {
-                MessageBox.Show("Skipping downloaded chapters cannot be used while saving as \"multiple images\" ");
-                return;
-            }
+			if (skipDownloadedChaptersCB.Checked && saveAs == "multiple images")
+			{
+				MessageBox.Show("Skipping downloaded chapters cannot be used while saving as \"multiple images\" ");
+				return;
+			}
 
 			bool wasWarned = false;
 			foreach (DataGridViewRow r in QueueGrid.Rows)
@@ -224,10 +224,10 @@ namespace Kea
 				
 				string html = client.DownloadString(line + "&page=1");
 
-                int episodeBegin = int.Parse(currentToonEntry.toonInfo.startDownloadAtEpisode);
-                int episodeEnd = (currentToonEntry.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToonEntry.toonInfo.stopDownloadAtEpisode);
+				int episodeBegin = int.Parse(currentToonEntry.toonInfo.startDownloadAtEpisode);
+				int episodeEnd = (currentToonEntry.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToonEntry.toonInfo.stopDownloadAtEpisode);
 
-                while (true)
+				while (true)
 				{
 					i++;
 					processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToonEntry.toonInfo.titleNo}) {currentToonEntry.toonInfo.toonTitleName} ] scoping tab {i}"; }); //run on the UI thread
@@ -256,13 +256,13 @@ namespace Kea
 							string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
 							string episodeSequence = inner_a_node.SelectSingleNode("./span[@class='tx']").InnerHtml;
 
-                            //Skip out-of-range chapters.
-                            if (episodeNo < episodeBegin || (episodeEnd != -1 && episodeNo > episodeEnd))
-                            {
-                                continue;
-                            }
+							//Skip out-of-range chapters.
+							if (episodeNo < episodeBegin || (episodeEnd != -1 && episodeNo > episodeEnd))
+							{
+								continue;
+							}
 
-                            Structures.EpisodeListEntry currentEpisode = new Structures.EpisodeListEntry();
+							Structures.EpisodeListEntry currentEpisode = new Structures.EpisodeListEntry();
 							
 							currentEpisode.episodeSequence = episodeSequence;
 							currentEpisode.episodeNo = episodeNo;
@@ -391,47 +391,54 @@ namespace Kea
 					}
 					else
 					{
-                        //Download fan translation
-                        List<string> imgUrlList = new List<string>();
+						//Download fan translation
+						List<string> imgUrlList = new List<string>();
 
-                        //Find available translations
-                        string jsonResponse = client.DownloadString( $"{Globals.naverWebtoonAPIBaseUrl}/ctrans/translatedEpisodeLanguageInfo_jsonp.json?titleNo={currentToon.toonInfo.titleNo}&episodeNo={episodeNo}" );
+						//Find available translations
+						string jsonResponse = client.DownloadString( $"{Globals.naverWebtoonAPIBaseUrl}/ctrans/translatedEpisodeLanguageInfo_jsonp.json?titleNo={currentToon.toonInfo.titleNo}&episodeNo={episodeNo}" );
 						JObject o = JObject.Parse(jsonResponse);
-                        string selectCondition = "@.languageCode == '" + currentToon.toonInfo.toonTranslationLanguageCode + "'";
-                        if (currentToon.toonInfo.toonTranslationTeamVersion != "default" )
-                        {
-                            selectCondition += " && @.teamVersion == " + currentToon.toonInfo.toonTranslationTeamVersion;
-                        }
-                        IEnumerable<JToken> languagesObject = o.SelectTokens("$.result.languageList[?(" + selectCondition + ")]").OrderByDescending(r => r["likeItCount"]);
-                        JToken selectedTranslation = languagesObject.FirstOrDefault();
-                        //If no translation was found, chapter will be skipped because image list is empty
-                        if (selectedTranslation != null)
-                        {
-                            string teamName = selectedTranslation["teamName"].ToString();
+						string selectCondition = "@.languageCode == '" + currentToon.toonInfo.toonTranslationLanguageCode + "'";
+						if (currentToon.toonInfo.toonTranslationTeamVersion != "default" )
+						{
+							selectCondition += " && @.teamVersion == " + currentToon.toonInfo.toonTranslationTeamVersion;
+						}
+						IEnumerable<JToken> languagesObject = o.SelectTokens("$.result.languageList[?(" + selectCondition + ")]").OrderByDescending(r => r["likeItCount"]);
+						JToken selectedTranslation = languagesObject.FirstOrDefault();
+						//If no translation was found, chapter will be skipped because image list is empty
+						if (selectedTranslation != null)
+						{
+							string teamName = selectedTranslation["teamName"].ToString();
 							string teamVersion = selectedTranslation["teamVersion"].ToString();
 							string languageName = selectedTranslation["languageName"].ToString();
 
-                            //Get image list of selected translation
-                            string imageListJsonResponse = client.DownloadString($"{Globals.naverWebtoonAPIBaseUrl}/ctrans/translatedEpisodeDetail_jsonp.json?titleNo={currentToon.toonInfo.titleNo}&episodeNo={episodeNo}&languageCode={currentToon.toonInfo.toonTranslationLanguageCode}&teamVersion={teamVersion}");
-                            JObject imageListO = JObject.Parse(imageListJsonResponse);
-                            IEnumerable<JToken> imageInfo = imageListO.SelectTokens("$.result.imageInfo[*]").OrderBy(r => r["sortOrder"]);
-                            foreach (JToken currentImageInfo in imageInfo)
-                            {
-                                imgUrlList.Add(currentImageInfo["imageUrl"].ToString());
-                            }
-                            imgUrlArray = imgUrlList.ToArray();
+							//Get image list of selected translation
+							string imageListJsonResponse = client.DownloadString($"{Globals.naverWebtoonAPIBaseUrl}/ctrans/translatedEpisodeDetail_jsonp.json?titleNo={currentToon.toonInfo.titleNo}&episodeNo={episodeNo}&languageCode={currentToon.toonInfo.toonTranslationLanguageCode}&teamVersion={teamVersion}");
+							JObject imageListO = JObject.Parse(imageListJsonResponse);
+							IEnumerable<JToken> imageInfo = imageListO.SelectTokens("$.result.imageInfo[*]").OrderBy(r => r["sortOrder"]);
+							foreach (JToken currentImageInfo in imageInfo)
+							{
+								imgUrlList.Add(currentImageInfo["imageUrl"].ToString());
+							}
+							imgUrlArray = imgUrlList.ToArray();
 							//If the chapter contains an image
 							//If translation exists
 							//Include a non-official warning
 							if( imgUrlArray.Length > 0 )
 							{
+								Structures.downloadedToonChapterFileInfo fileInfo = new Structures.downloadedToonChapterFileInfo();
 								string imgName = imageNo.ToString("D5");
-								string imgSavePath = $"{episodeSavePath}{imgName}.jpg";
+								string imgSaveName = $"{imgName}.jpg";
+								string imgSavePath = $"{episodeSavePath}{imgSaveName}";
+								
 								ToonHelpers.DrawAndSaveUnofficialWarningImage(languageName,teamName,imgSavePath);
+								fileInfo.filePath = imgSavePath;
+								fileInfo.filePathInArchive = imgSaveName;
+								downloadedImages.Add(fileInfo);
+								
 								imageNo++;
 							}
-                        }
-                    }
+						}
+					}
 
 					int totalImgCount = imgUrlArray.Length;
 
