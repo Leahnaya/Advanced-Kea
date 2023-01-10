@@ -16,6 +16,8 @@ using iTextSharp.text.pdf;
 using Image = iTextSharp.text.Image;
 using Rectangle = iTextSharp.text.Rectangle;
 using Kea.CommonFiles;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Kea
 {
@@ -66,8 +68,9 @@ namespace Kea
 		{
 			List<string> lines = new List<string>();
 			lines.AddRange(URLTextbox.Text.Split('\n'));
-			foreach (string line in lines)
+			foreach (string _line in lines)
 			{
+				string line = _line;
 				int nameEnd = 0;
 				int nameStart = 0;
 				if (!line.Contains("https://www.webtoons.com/") || !line.Contains("/list?title_no=")) { continue; } //doesn't support m.webtoons.com bc it would result in a 400 bad request and i'm too lazy to replace the m with www manually
@@ -86,13 +89,43 @@ namespace Kea
 				
 				Uri lineUri = new Uri(line);
 				int titleNo = Convert.ToInt32(System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("title_no"));
+
+                string languageCode = System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("language");
+
+                if (Helpers.IsStringEmptyNullOrWhiteSpace(languageCode))
+                {
+                    languageCode = "default";
+                }
+				else
+				{
+					//Query used by Kea to download fan translations, webtoons doesn't support this query
+					line = Helpers.RemoveQueryStringByKey(line, "language");
+				}
+
+                string teamVersion = System.Web.HttpUtility.ParseQueryString(lineUri.Query).Get("teamVersion");
+
+                if (Helpers.IsStringEmptyNullOrWhiteSpace(teamVersion))
+                {
+                    teamVersion = "default";
+                }
+				else
+				{
+					//Query used by Kea to download fan translations, webtoons doesn't support this query
+					line = Helpers.RemoveQueryStringByKey(line, "teamVersion");
+				}
 				
-				var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName && Convert.ToInt32(row.Cells["titleNo"].Value.ToString()) == titleNo );
+				if( languageCode == "default" && teamVersion != "default" )
+				{
+					MessageBox.Show("default language can't have a team version.");
+					continue;
+				}
+
+                var items = QueueGrid.Rows.Cast<DataGridViewRow>().Where(row => row.Cells["titleName"].Value.ToString() == toonName && Convert.ToInt32(row.Cells["titleNo"].Value.ToString()) == titleNo && row.Cells["titleTranslationLanguageCode"].Value.ToString() == languageCode && row.Cells["titleTranslationTeamVersion"].Value.ToString() == teamVersion);
 
 				if (items.Count() != 0)
 					continue;
 
-				QueueGrid.Rows.Add(titleNo, toonName, "1", "end",line);
+				QueueGrid.Rows.Add(titleNo, toonName, "1", "end", languageCode, teamVersion, line);
 			}
 			URLTextbox.Text = "";
 		}
@@ -105,6 +138,7 @@ namespace Kea
                 return;
             }
 
+			bool wasWarned = false;
 			foreach (DataGridViewRow r in QueueGrid.Rows)
 			{
 				int end = 0, start = 0;
@@ -125,6 +159,11 @@ namespace Kea
 					if (r.Cells["titleEpEnd"].Value.ToString() != "end") { MessageBox.Show("The end chapter must be a number or the word 'end'!"); return; }
 				}
 				if (end != 0 && end < start) { MessageBox.Show("The start chapter must smaller than the end chapter!"); return; }
+				if( !wasWarned && HighestQualityCB.Checked && r.Cells["titleTranslationLanguageCode"].Value.ToString() != "default" )
+				{
+					MessageBox.Show("Warning! High quality options will be ignored for fan translations.");
+					wasWarned=true;
+				}
 			}
 			DisableAllControls(this);
 			saveAs = saveAsOption.Text;
@@ -176,14 +215,19 @@ namespace Kea
 			currentToonEntry.toonInfo.toonTitleName = r.Cells["titleName"].Value.ToString();
 			currentToonEntry.toonInfo.startDownloadAtEpisode = r.Cells["titleEpBegin"].Value.ToString();
 			currentToonEntry.toonInfo.stopDownloadAtEpisode = r.Cells["titleEpEnd"].Value.ToString();
+			currentToonEntry.toonInfo.toonTranslationLanguageCode = r.Cells["titleTranslationLanguageCode"].Value.ToString();
+			currentToonEntry.toonInfo.toonTranslationTeamVersion = r.Cells["titleTranslationTeamVersion"].Value.ToString();
 
 			using (WebClient client = new WebClient())
 			{
 				int i = 0;
 				
 				string html = client.DownloadString(line + "&page=1");
-				
-				while (true)
+
+                int episodeBegin = int.Parse(currentToonEntry.toonInfo.startDownloadAtEpisode);
+                int episodeEnd = (currentToonEntry.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToonEntry.toonInfo.stopDownloadAtEpisode);
+
+                while (true)
 				{
 					i++;
 					processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToonEntry.toonInfo.titleNo}) {currentToonEntry.toonInfo.toonTitleName} ] scoping tab {i}"; }); //run on the UI thread
@@ -211,8 +255,14 @@ namespace Kea
 							string url = inner_a_node.Attributes["href"].Value;
 							string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
 							string episodeSequence = inner_a_node.SelectSingleNode("./span[@class='tx']").InnerHtml;
-							
-							Structures.EpisodeListEntry currentEpisode = new Structures.EpisodeListEntry();
+
+                            //Skip out-of-range chapters.
+                            if (episodeNo < episodeBegin || (episodeEnd != -1 && episodeNo > episodeEnd))
+                            {
+                                continue;
+                            }
+
+                            Structures.EpisodeListEntry currentEpisode = new Structures.EpisodeListEntry();
 							
 							currentEpisode.episodeSequence = episodeSequence;
 							currentEpisode.episodeNo = episodeNo;
@@ -259,7 +309,7 @@ namespace Kea
 			}
 
 			string suffix = "";
-			if(HighestQualityCB.Checked)
+			if(HighestQualityCB.Checked && currentToon.toonInfo.toonTranslationLanguageCode == "default")
 			{
 				suffix = "[HQ]";
 			}
@@ -273,18 +323,11 @@ namespace Kea
 				progressBar.Minimum = (int)startNr * 100;
 				progressBar.Maximum = (int)endNr * 100;
 			});
-			
-			int episodeBegin = int.Parse(currentToon.toonInfo.startDownloadAtEpisode);
-			int episodeEnd = (currentToon.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToon.toonInfo.stopDownloadAtEpisode);
-			
+
 			for (int i = (int)startNr; i < (int)endNr; i++)	//...and for each chapter in that comic...
 			{
 				int episodeNo = currentToon.episodeList[i].episodeNo;
-				//Skip out-of-range chapters.
-				if( episodeNo < episodeBegin || ( episodeEnd != -1 &&  episodeNo > episodeEnd ) )
-				{
-					continue;
-				}
+				
 				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of chapter {episodeNo}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
 				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(currentToon.episodeList[i],suffix);
@@ -314,6 +357,7 @@ namespace Kea
 				}
 				
 				List<Structures.downloadedToonChapterFileInfo> downloadedImages = new List<Structures.downloadedToonChapterFileInfo>();
+				int imageNo = 0;
 				
 				using (WebClient client = new WebClient())
 				{
@@ -327,20 +371,83 @@ namespace Kea
 					HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
 					doc.LoadHtml(html);
 					
-					var episodeImgs = doc.DocumentNode.SelectNodes(Globals.episodeImageHtmlXPath);
-					//In case SelectNodes messes the order, sort by position in html document
-					HtmlNode[] imgList = episodeImgs.OrderBy(node => node.StreamPosition).ToArray();
-					int totalImgCount = imgList.Length;
-					int imageNo = 0;
+					string[] imgUrlArray = new string[] {  };
 					
-					foreach (HtmlNode imageNode in imgList)
+					if( currentToon.toonInfo.toonTranslationLanguageCode == "default" )
 					{
+						//Download official translation
+
+						List<string> imgUrlList = new List<string>();
+
+						var episodeImgs = doc.DocumentNode.SelectNodes(Globals.episodeImageHtmlXPath);
+						//In case SelectNodes messes the order, sort by position in html document
+						HtmlNode[] imgList = episodeImgs.OrderBy(node => node.StreamPosition).ToArray();
+						foreach (HtmlNode imageNode in imgList)
+						{
+							string imgUrl = imageNode.Attributes["data-url"].Value;
+							imgUrlList.Add( imgUrl );
+						}
+						imgUrlArray = imgUrlList.ToArray();
+					}
+					else
+					{
+                        //Download fan translation
+                        List<string> imgUrlList = new List<string>();
+
+                        //Find available translations
+                        string jsonResponse = client.DownloadString( $"{Globals.naverWebtoonAPIBaseUrl}/ctrans/translatedEpisodeLanguageInfo_jsonp.json?titleNo={currentToon.toonInfo.titleNo}&episodeNo={episodeNo}" );
+						JObject o = JObject.Parse(jsonResponse);
+                        string selectCondition = "@.languageCode == '" + currentToon.toonInfo.toonTranslationLanguageCode + "'";
+                        if (currentToon.toonInfo.toonTranslationTeamVersion != "default" )
+                        {
+                            selectCondition += " && @.teamVersion == " + currentToon.toonInfo.toonTranslationTeamVersion;
+                        }
+                        IEnumerable<JToken> languagesObject = o.SelectTokens("$.result.languageList[?(" + selectCondition + ")]").OrderByDescending(r => r["likeItCount"]);
+                        JToken selectedTranslation = languagesObject.FirstOrDefault();
+                        //If no translation was found, chapter will be skipped because image list is empty
+                        if (selectedTranslation != null)
+                        {
+                            string teamName = selectedTranslation["teamName"].ToString();
+							string teamVersion = selectedTranslation["teamVersion"].ToString();
+							string languageName = selectedTranslation["languageName"].ToString();
+
+                            //Get image list of selected translation
+                            string imageListJsonResponse = client.DownloadString($"{Globals.naverWebtoonAPIBaseUrl}/ctrans/translatedEpisodeDetail_jsonp.json?titleNo={currentToon.toonInfo.titleNo}&episodeNo={episodeNo}&languageCode={currentToon.toonInfo.toonTranslationLanguageCode}&teamVersion={teamVersion}");
+                            JObject imageListO = JObject.Parse(imageListJsonResponse);
+                            IEnumerable<JToken> imageInfo = imageListO.SelectTokens("$.result.imageInfo[*]").OrderBy(r => r["sortOrder"]);
+                            foreach (JToken currentImageInfo in imageInfo)
+                            {
+                                imgUrlList.Add(currentImageInfo["imageUrl"].ToString());
+                            }
+                            imgUrlArray = imgUrlList.ToArray();
+							//If the chapter contains an image
+							//If translation exists
+							//Include a non-official warning
+							if( imgUrlArray.Length > 0 )
+							{
+								string imgName = imageNo.ToString("D5");
+								string imgSavePath = $"{episodeSavePath}{imgName}.jpg";
+								ToonHelpers.DrawAndSaveUnofficialWarningImage(languageName,teamName,imgSavePath);
+								imageNo++;
+							}
+                        }
+                    }
+
+					int totalImgCount = imgUrlArray.Length;
+
+					if( totalImgCount == 0 )
+						continue;
+					
+					totalImgCount += imageNo; //include generated images
+					
+					foreach (string _imgUrl in imgUrlArray)
+					{
+						string imgUrl = _imgUrl;
 						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {imageNo} of chapter {episodeNo}!"; }); //run on the UI thread
 						client.Headers.Add("Referer", currentToon.episodeList[i].url);	//refresh the referer for each request!
 
 						string imgName = imageNo.ToString("D5");
-						string imgUrl = imageNode.Attributes["data-url"].Value;
-						if(HighestQualityCB.Checked)
+						if(HighestQualityCB.Checked && currentToon.toonInfo.toonTranslationLanguageCode == "default")
 						{
 							//Remove the "?type=" query string from image url, this results in downloading the image with the same quality stored in the server.
 							imgUrl = Helpers.RemoveQueryStringByKey(imgUrl, "type");

@@ -41,11 +41,6 @@
             this.label4 = new System.Windows.Forms.Label();
             this.processInfo = new System.Windows.Forms.TextBox();
             this.QueueGrid = new System.Windows.Forms.DataGridView();
-            this.titleNo = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleEpBegin = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleEpEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.titleUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.QueueTextbox = new System.Windows.Forms.RichTextBox();
             this.savepathTB = new System.Windows.Forms.TextBox();
             this.selectFolderBtn = new System.Windows.Forms.Button();
@@ -64,6 +59,13 @@
             this.saveAsOption = new System.Windows.Forms.ComboBox();
             this.HighestQualityCB = new System.Windows.Forms.CheckBox();
             this.skipDownloadedChaptersCB = new System.Windows.Forms.CheckBox();
+            this.titleNo = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleEpBegin = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleEpEnd = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleTranslationLanguageCode = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleTranslationTeamVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.titleUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.HandleBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.exitBtn)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.QueueGrid)).BeginInit();
@@ -190,7 +192,6 @@
             // 
             this.QueueGrid.AllowUserToAddRows = false;
             this.QueueGrid.AllowUserToDeleteRows = false;
-            this.QueueGrid.AllowUserToResizeColumns = false;
             this.QueueGrid.AllowUserToResizeRows = false;
             this.QueueGrid.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(147)))), ((int)(((byte)(165)))), ((int)(((byte)(157)))));
             this.QueueGrid.BorderStyle = System.Windows.Forms.BorderStyle.None;
@@ -201,6 +202,8 @@
             this.titleName,
             this.titleEpBegin,
             this.titleEpEnd,
+            this.titleTranslationLanguageCode,
+            this.titleTranslationTeamVersion,
             this.titleUrl});
             this.QueueGrid.Cursor = System.Windows.Forms.Cursors.Default;
             this.QueueGrid.GridColor = System.Drawing.SystemColors.ControlDarkDark;
@@ -210,44 +213,6 @@
             this.QueueGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.QueueGrid.Size = new System.Drawing.Size(520, 146);
             this.QueueGrid.TabIndex = 14;
-            // 
-            // titleNo
-            // 
-            this.titleNo.Frozen = true;
-            this.titleNo.HeaderText = "Title No.";
-            this.titleNo.Name = "titleNo";
-            this.titleNo.ReadOnly = true;
-            this.titleNo.Width = 80;
-            // 
-            // titleName
-            // 
-            this.titleName.Frozen = true;
-            this.titleName.HeaderText = "Name";
-            this.titleName.Name = "titleName";
-            this.titleName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.titleName.Width = 160;
-            // 
-            // titleEpBegin
-            // 
-            this.titleEpBegin.Frozen = true;
-            this.titleEpBegin.HeaderText = "start at chapter";
-            this.titleEpBegin.Name = "titleEpBegin";
-            this.titleEpBegin.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            // 
-            // titleEpEnd
-            // 
-            this.titleEpEnd.Frozen = true;
-            this.titleEpEnd.HeaderText = "End at chapter";
-            this.titleEpEnd.Name = "titleEpEnd";
-            this.titleEpEnd.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
-            this.titleEpEnd.Width = 160;
-            // 
-            // titleUrl
-            // 
-            this.titleUrl.Frozen = true;
-            this.titleUrl.HeaderText = "url";
-            this.titleUrl.Name = "titleUrl";
-            this.titleUrl.Visible = false;
             // 
             // QueueTextbox
             // 
@@ -462,15 +427,66 @@
             // 
             this.skipDownloadedChaptersCB.AutoSize = true;
             this.skipDownloadedChaptersCB.Checked = true;
-			this.skipDownloadedChaptersCB.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.skipDownloadedChaptersCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.skipDownloadedChaptersCB.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.skipDownloadedChaptersCB.Font = new System.Drawing.Font("GT Walsheim Light", 9.749999F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.skipDownloadedChaptersCB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(36)))), ((int)(((byte)(40)))), ((int)(((byte)(36)))));
             this.skipDownloadedChaptersCB.Location = new System.Drawing.Point(154, 485);
             this.skipDownloadedChaptersCB.Name = "skipDownloadedChaptersCB";
-            this.skipDownloadedChaptersCB.Size = new System.Drawing.Size(152, 17);
+            this.skipDownloadedChaptersCB.Size = new System.Drawing.Size(187, 20);
             this.skipDownloadedChaptersCB.TabIndex = 32;
             this.skipDownloadedChaptersCB.Text = "Skip downloaded chapters";
             this.skipDownloadedChaptersCB.UseVisualStyleBackColor = true;
+            // 
+            // titleNo
+            // 
+            this.titleNo.HeaderText = "Title No.";
+            this.titleNo.Name = "titleNo";
+            this.titleNo.ReadOnly = true;
+            this.titleNo.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleNo.Width = 80;
+            // 
+            // titleName
+            // 
+            this.titleName.HeaderText = "Name";
+            this.titleName.Name = "titleName";
+            this.titleName.ReadOnly = true;
+            this.titleName.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleName.Width = 160;
+            // 
+            // titleEpBegin
+            // 
+            this.titleEpBegin.HeaderText = "start at chapter";
+            this.titleEpBegin.Name = "titleEpBegin";
+            this.titleEpBegin.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // titleEpEnd
+            // 
+            this.titleEpEnd.HeaderText = "End at chapter";
+            this.titleEpEnd.Name = "titleEpEnd";
+            this.titleEpEnd.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // titleTranslationLanguageCode
+            // 
+            this.titleTranslationLanguageCode.HeaderText = "Language Code";
+            this.titleTranslationLanguageCode.Name = "titleTranslationLanguageCode";
+            this.titleTranslationLanguageCode.ReadOnly = true;
+            this.titleTranslationLanguageCode.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
+            // titleTranslationTeamVersion
+            // 
+            this.titleTranslationTeamVersion.HeaderText = "Team Version";
+            this.titleTranslationTeamVersion.Name = "titleTranslationTeamVersion";
+            this.titleTranslationTeamVersion.ReadOnly = true;
+            this.titleTranslationTeamVersion.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleTranslationTeamVersion.Width = 160;
+            // 
+            // titleUrl
+            // 
+            this.titleUrl.HeaderText = "url";
+            this.titleUrl.Name = "titleUrl";
+            this.titleUrl.ReadOnly = true;
+            this.titleUrl.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.titleUrl.Visible = false;
             // 
             // Main
             // 
@@ -550,12 +566,14 @@
         private System.Windows.Forms.ToolTip toolTips;
         private System.Windows.Forms.ComboBox saveAsOption;
         private System.Windows.Forms.CheckBox HighestQualityCB;
-        private System.Windows.Forms.DataGridViewTextBoxColumn titleNo;
-        private System.Windows.Forms.DataGridViewTextBoxColumn titleName;
-        private System.Windows.Forms.DataGridViewTextBoxColumn titleEpBegin;
-        private System.Windows.Forms.DataGridViewTextBoxColumn titleEpEnd;
-        private System.Windows.Forms.DataGridViewTextBoxColumn titleUrl;
         private System.Windows.Forms.CheckBox skipDownloadedChaptersCB;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleTranslationLanguageCode;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleUrl;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleTranslationTeamVersion;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleEpEnd;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleEpBegin;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn titleNo;
     }
 }
 

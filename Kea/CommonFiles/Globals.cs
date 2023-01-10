@@ -17,5 +17,7 @@ namespace Kea.CommonFiles
 		
 		public const string episodeImageHtmlXPath = "//body/div[@id='wrap']/div[@id='container']/div[@id='content']/div[@class='cont_box']/div[@class='viewer_lst']/div[@id='_imageList']/img";
 		
+		public const string naverWebtoonAPIBaseUrl = "https://global.apis.naver.com/lineWebtoon";
+		
 	}
 }

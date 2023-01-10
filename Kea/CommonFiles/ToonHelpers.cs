@@ -104,9 +104,19 @@ namespace Kea.CommonFiles
 		
 		public static string GetToonSavePath(Structures.ToonListEntryInfo toonInfo)
 		{
-			//Must return without any slashes at the end
-			string sanitizedTitleName = Helpers.SanitizeStringForFilePath(toonInfo.toonTitleName);
-			return $"{sanitizedTitleName}[{toonInfo.titleNo.ToString("D6")}]";
+            //Must return without any slashes at the end
+            string languageCode = toonInfo.toonTranslationLanguageCode;
+            if (languageCode == "default")
+                languageCode = "";
+
+            if (toonInfo.toonTranslationLanguageCode != "default" && toonInfo.toonTranslationTeamVersion != "default")
+                languageCode += $"-{toonInfo.toonTranslationTeamVersion}";
+
+            if (!Helpers.IsStringEmptyNullOrWhiteSpace(languageCode))
+                languageCode = $"[{languageCode}]";
+
+            string sanitizedTitleName = Helpers.SanitizeStringForFilePath(toonInfo.toonTitleName);
+			return $"{languageCode}{sanitizedTitleName}[{toonInfo.titleNo.ToString("D6")}]";
 		}
 		
 		public static string GetToonEpisodeSavePath(Structures.EpisodeListEntry episodeInfo,string suffix)
@@ -156,6 +166,30 @@ namespace Kea.CommonFiles
                     new System.Drawing.Rectangle(5, 5, 390, 190),
                     new StringFormat { Alignment = StringAlignment.Center,LineAlignment = StringAlignment.Center });
                 g.Save();
+            }
+            bm.Save(savePath);
+		}
+		
+		public static void DrawAndSaveUnofficialWarningImage(string languageName, string teamName, string savePath)
+		{
+			if( !Helpers.IsStringEmptyNullOrWhiteSpace(teamName) )
+				teamName = $"- {teamName}";
+			Bitmap bm = new Bitmap(400, 200);
+            System.Drawing.Rectangle bounds = new System.Drawing.Rectangle(50, 10, 300, 40);
+            System.Drawing.Rectangle textBounds = new System.Drawing.Rectangle(50, 13, 300, 40);
+            System.Drawing.Rectangle textBounds2 = new System.Drawing.Rectangle(0,60,400,130);
+            GraphicsPath gp = Helpers.MakeRoundedRect(bounds,20,20,true,true,true,true);
+            using (Graphics g = Graphics.FromImage(bm))
+            {
+                g.Clear(Color.Black);//Fill background color
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                g.DrawPath(new Pen(Color.LightGreen, 5), gp);
+                g.DrawString("Unofficial", new System.Drawing.Font(FontFamily.GenericSansSerif, 30, FontStyle.Bold), Brushes.LightGreen,
+                    textBounds,
+                    new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+                g.DrawString($"This is translated in {languageName} by WEBTOON fans{teamName}", new System.Drawing.Font(FontFamily.GenericSansSerif, 21, FontStyle.Bold), Brushes.White,
+                    textBounds2,
+                    new StringFormat { Alignment = StringAlignment.Center });
             }
             bm.Save(savePath);
 		}

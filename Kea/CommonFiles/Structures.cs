@@ -27,6 +27,9 @@ namespace Kea.CommonFiles
 			public int titleNo;
 			public string toonTitleName;
 			
+			public string toonTranslationLanguageCode;
+			public string toonTranslationTeamVersion;
+			
 			public string startDownloadAtEpisode;
 			public string stopDownloadAtEpisode;
 		}
