@@ -265,20 +265,29 @@ namespace Kea
 			}
 
 			//set start and end chapter
-			float startNr = int.Parse(currentToon.toonInfo.startDownloadAtEpisode) - 1;
-			float endNr = (currentToon.toonInfo.stopDownloadAtEpisode == "end") ? currentToon.episodeList.Length : int.Parse(currentToon.toonInfo.stopDownloadAtEpisode);
+			float startNr = 0;
+			float endNr = currentToon.episodeList.Length;
 
-			if (endNr > currentToon.episodeList.Length) endNr = currentToon.episodeList.Length;
 			processInfo.Invoke((MethodInvoker)delegate
 			{
 				progressBar.Minimum = (int)startNr * 100;
 				progressBar.Maximum = (int)endNr * 100;
 			});
-			for (int i = (int)startNr; i < endNr; i++)	//...and for each chapter in that comic...
+			
+			int episodeBegin = int.Parse(currentToon.toonInfo.startDownloadAtEpisode);
+			int episodeEnd = (currentToon.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToon.toonInfo.stopDownloadAtEpisode);
+			
+			for (int i = (int)startNr; i < (int)endNr; i++)	//...and for each chapter in that comic...
 			{
-				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of {currentToon.episodeList[i].url}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
+				int episodeNo = currentToon.episodeList[i].episodeNo;
+				//Skip out-of-range chapters.
+				if( episodeNo < episodeBegin || ( episodeEnd != -1 &&  episodeNo > episodeEnd ) )
+				{
+					continue;
+				}
+				processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] grabbing the html of chapter {episodeNo}"; try { progressBar.Value = i * 100; } catch { } }); //run on the UI thread
 				
-				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(i,currentToon.episodeList[i],suffix);
+				string episodeSavePath = comicSavePath + ToonHelpers.GetToonEpisodeSavePath(episodeNo,currentToon.episodeList[i],suffix);
 				string archiveSavePath = episodeSavePath; // shouldn't end with /
 				
 				if( skipDownloadedChaptersCB.Checked )
@@ -286,7 +295,7 @@ namespace Kea
 					string bundlePath = $"{archiveSavePath}{ToonHelpers.GetBundleExtension(saveAs)}";
 					if (File.Exists(bundlePath))
 					{
-						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] Skipping the chapter";}); //run on the UI thread
+						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] Skipping chapter {episodeNo}";}); //run on the UI thread
 						continue;
 					}
 				}
@@ -326,7 +335,7 @@ namespace Kea
 					
 					foreach (HtmlNode imageNode in imgList)
 					{
-						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {imageNo} of chapter {i + 1}!"; }); //run on the UI thread
+						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] downloading image {imageNo} of chapter {episodeNo}!"; }); //run on the UI thread
 						client.Headers.Add("Referer", currentToon.episodeList[i].url);	//refresh the referer for each request!
 
 						string imgName = imageNo.ToString("D5");
