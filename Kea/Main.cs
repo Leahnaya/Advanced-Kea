@@ -447,6 +447,7 @@ namespace Kea
 					
 					totalImgCount += imageNo; //include generated images
 					
+					bool hasFailed = false;
 					foreach (string _imgUrl in imgUrlArray)
 					{
 						string imgUrl = _imgUrl;
@@ -475,7 +476,7 @@ namespace Kea
 							imgSaveName = $"{imgName}_failed.png";
 							imgSavePath = $"{episodeSavePath}{imgSaveName}";
 							ToonHelpers.DrawAndSaveNotFoundImage(imageNo,imgSavePath);
-							archiveSavePath += "_failed";
+							hasFailed = true;
 						}
 
 						fileInfo.filePath = imgSavePath;
@@ -485,6 +486,9 @@ namespace Kea
 						processInfo.Invoke((MethodInvoker)delegate { try { progressBar.Value = i * 100 + (int)(imageNo / (float)totalImgCount * 100); } catch { } });
 						imageNo++;
 					}
+
+					if( hasFailed )
+						archiveSavePath += "_failed";
 				}
 				
 				ToonHelpers.createBundledFile(saveAs, archiveSavePath, downloadedImages );
