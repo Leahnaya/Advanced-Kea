@@ -132,9 +132,13 @@ namespace Kea
 
 		private async void startBtn_Click(object sender, EventArgs e)
 		{
+			DisableAllControls(this);
+			saveAs = saveAsOption.Text;
+			
 			if (skipDownloadedChaptersCB.Checked && saveAs == "multiple images")
 			{
 				MessageBox.Show("Skipping downloaded chapters cannot be used while saving as \"multiple images\" ");
+				EnableAllControls(this);
 				return;
 			}
 
@@ -145,28 +149,26 @@ namespace Kea
 				try
 				{
 					start = int.Parse(r.Cells["titleEpBegin"].Value.ToString());
-					if (start < 1) { MessageBox.Show("The start chapter must be greater than zero!"); return; }
+					if (start < 1) { MessageBox.Show("The start chapter must be greater than zero!"); EnableAllControls(this); return; }
 				}
-				catch { MessageBox.Show("The start chapter must be a number!"); return; }
+				catch { MessageBox.Show("The start chapter must be a number!"); EnableAllControls(this); return; }
 
 				try
 				{
 					end = int.Parse(r.Cells["titleEpEnd"].Value.ToString());
-					if (end < 1) { MessageBox.Show("The end chapter must be greater than zero!"); return; }
+					if (end < 1) { MessageBox.Show("The end chapter must be greater than zero!"); EnableAllControls(this); return; }
 				}
 				catch
 				{
-					if (r.Cells["titleEpEnd"].Value.ToString() != "end") { MessageBox.Show("The end chapter must be a number or the word 'end'!"); return; }
+					if (r.Cells["titleEpEnd"].Value.ToString() != "end") { MessageBox.Show("The end chapter must be a number or the word 'end'!"); EnableAllControls(this); return; }
 				}
-				if (end != 0 && end < start) { MessageBox.Show("The start chapter must smaller than the end chapter!"); return; }
+				if (end != 0 && end < start) { MessageBox.Show("The start chapter must smaller than the end chapter!"); EnableAllControls(this); return; }
 				if( !wasWarned && HighestQualityCB.Checked && r.Cells["titleTranslationLanguageCode"].Value.ToString() != "default" )
 				{
 					MessageBox.Show("Warning! High quality options will be ignored for fan translations.");
 					wasWarned=true;
 				}
 			}
-			DisableAllControls(this);
-			saveAs = saveAsOption.Text;
 			EnableControls(HandleBar);
 			EnableControls(exitBtn);
 			EnableControls(minimizeBtn);
