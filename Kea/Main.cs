@@ -492,7 +492,7 @@ namespace Kea
 				}
 				
 				ToonHelpers.createBundledFile(saveAs, archiveSavePath, downloadedImages );
-				if( chapterDirectoryWasCreated && ( saveAs == "PDF file" || saveAs == "CBZ file" || saveAs == "one image (may be lower in quality)" ) )
+				if( chapterDirectoryWasCreated && ToonHelpers.isBundle(saveAs) )
 				{
 					Directory.Delete(episodeSavePath, true);
 				}

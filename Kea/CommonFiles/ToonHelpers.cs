@@ -90,6 +90,18 @@ namespace Kea.CommonFiles
 			}
 		}
 		
+		public static bool isBundle(string saveAs)
+		{
+			if( saveAs == "PDF file" )
+				return true;
+			if( saveAs == "one image (may be lower in quality)" )
+				return true;
+			if( saveAs == "CBZ file" )
+				return true;
+			
+			return false;
+		}
+		
 		public static string GetBundleExtension(string saveAs)
 		{
 			if( saveAs == "PDF file" )
