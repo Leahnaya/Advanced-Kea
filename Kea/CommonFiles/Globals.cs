@@ -19,5 +19,7 @@ namespace Kea.CommonFiles
 		
 		public const string naverWebtoonAPIBaseUrl = "https://global.apis.naver.com/lineWebtoon";
 		
+		public const string spoofedUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/109.0";
+		
 	}
 }

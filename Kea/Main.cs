@@ -222,7 +222,7 @@ namespace Kea
 			{
 				int i = 0;
 				
-				string html = client.DownloadString(line + "&page=1");
+				string nextPageUrl = line + "&page=1";
 
 				int episodeBegin = int.Parse(currentToonEntry.toonInfo.startDownloadAtEpisode);
 				int episodeEnd = (currentToonEntry.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToonEntry.toonInfo.stopDownloadAtEpisode);
@@ -232,11 +232,14 @@ namespace Kea
 					i++;
 					processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToonEntry.toonInfo.titleNo}) {currentToonEntry.toonInfo.toonTitleName} ] scoping tab {i}"; }); //run on the UI thread
 					client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
+					client.Headers.Add("User-Agent", Globals.spoofedUserAgent);
+
 					IWebProxy proxy = WebRequest.DefaultWebProxy;   //add default proxy
 					client.Proxy = proxy;
 					
 					client.Encoding = System.Text.Encoding.UTF8;
 
+					string html = client.DownloadString(nextPageUrl);
 					var htmlDoc = new HtmlAgilityPack.HtmlDocument();
 					htmlDoc.LoadHtml(html);
 					var episodeNodes = htmlDoc.DocumentNode.SelectNodes(Globals.episodeListItemHtmlXPath);
@@ -280,7 +283,7 @@ namespace Kea
 					if (!Helpers.IsValidURL(nextPage))
 						nextPage = baseUri.GetLeftPart(UriPartial.Authority) + nextPage;
 
-					html = client.DownloadString(nextPage);
+					nextPageUrl = nextPage;
 				}
 			}
 			
@@ -362,6 +365,8 @@ namespace Kea
 				using (WebClient client = new WebClient())
 				{
 					client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
+					client.Headers.Add("User-Agent", Globals.spoofedUserAgent);
+
 					IWebProxy proxy = WebRequest.DefaultWebProxy;	//add default proxy
 					client.Proxy = proxy;
 					
