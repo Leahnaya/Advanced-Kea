@@ -2,7 +2,7 @@
 ###### *with GUI and everything!*  
 Kea is an appication for downloading comics from https://www.webtoons.com for personal, offline use.
 ## How To: Download
-Download [Advanced Kea v.1.3.4.1](https://github.com/Anything144/Advanced-Kea/releases/download/v1.3.4.1/AdvancedKea.v1.3.4.1.zip)
+Download [Advanced Kea v.1.3.5](https://github.com/Anything144/Advanced-Kea/releases/download/v1.3.5/AdvancedKea.v1.3.5.zip)
 or look at all releases [here](https://github.com/Anything144/Advanced-Kea/releases).  
 After the .zip folder downloaded unzip it and run Kea.exe.  
 *(all files in the Kea folder need to stay in the same directory)*
@@ -15,6 +15,49 @@ To edit Kea, download everything and open ***Kea.sln*** in Visual Studio.
 >***Note:*** please don't use links of specific chapters  
 >This would work: https://www.webtoons.com/en/action/hero-killer/list?title_no=2745  
 >But this wouldn't: https://www.webtoons.com/en/action/hero-killer/episode-1/viewer?title_no=2745&episode_no=1  
+
+>***Note2:*** To download Fan translations, add &language=LANGUAGE_CODE to the url
+>Replace LANGUAGE_CODE with the language code of the desired translation
+>For example:
+>The url for dice is: https://www.webtoons.com/en/fantasy/dice/list?title_no=64  
+>To download the spanish fan translation, the url becomes: https://www.webtoons.com/en/fantasy/dice/list?title_no=64&language=SPA  
+>When multiple translations are found, the translation with highest likes is downloaded.
+>If you are interested in downloading the translation of a specific team, add &teamVersion=TEAMVERSION to the url, replace TEAMVERSION with the desired team.
+
+***Language codes ***
+
+| Language | Code |
+| :---: | :---: |
+| Arabic | ARA |
+| Bengali | BEN |
+| Czech | CES |
+| Danish | DAN |
+| German | DEU |
+| Greek | GRE |
+| English | ENG |
+| Spanish | SPA |
+| Persian | PER |
+| Filipino | FIL |
+| French | FRA |
+| Hindi | HIN |
+| Indonesian | IND |
+| Italian | ITA |
+| Japanese | JPN |
+| Malay | MAY |
+| Polish | POL |
+| Portuguese(BR) | POR |
+| Portuguese(EU) | POT |
+| Romanian | RON |
+| Russian | RUS |
+| Swedish | SWE |
+| Thai | THA |
+| Turkish | TUR |
+| Vietnamese | VIE |
+| Chinese 简体 (Simplified) | CMN |
+| Chinese 繁體 (Traditional)  | CMT |
+
+>***Note:*** Language code list may be incomplete.
+
 * press the ***add all to queue*** button to, uh... add them to the queue  
 	(If a comic does not get added, the link was invalid)
 * Use ***remove selected*** and ***remove all*** to delete comics you dont want to download
@@ -38,3 +81,4 @@ To edit Kea, download everything and open ***Kea.sln*** in Visual Studio.
 ## used packages
 - **HtmlAgilityPack** - for parsing HTML
 - **ITextSharp** - for converting images to a PDF file
+- **Newtonsoft.JSON** - for parsing JSON
