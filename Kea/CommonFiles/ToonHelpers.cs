@@ -135,7 +135,7 @@ namespace Kea.CommonFiles
 		{
 			//Must return without any slashes at the end
 			//string BasePath = GetToonSavePath(episodeInfo.toonInfo); // commented for Refactor.
-			return $"({episodeInfo.episodeNo}) {episodeInfo.episodeTitle}{suffix}";
+			return $"[{episodeInfo.episodeSequence}]({episodeInfo.episodeNo}) {episodeInfo.episodeTitle}{suffix}";
 		}
 		
 		public static void DrawAndSaveNotFoundImage(int imageNumber, string savePath)

@@ -339,6 +339,7 @@ namespace Kea
 				if( skipDownloadedChaptersCB.Checked )
 				{
 					string bundlePath = $"{archiveSavePath}{ToonHelpers.GetBundleExtension(saveAs)}";
+					//TODO: don't check for episode sequence
 					if (File.Exists(bundlePath))
 					{
 						processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToon.toonInfo.titleNo}) {currentToon.toonInfo.toonTitleName} ] Skipping chapter {episodeNo}";}); //run on the UI thread
