@@ -200,72 +200,104 @@ namespace Kea
 			progressBar.Value = progressBar.Minimum;
 		}
 
-		private async Task GetChapterAsync(DataGridViewRow r)
-		{
-			string line = r.Cells["titleUrl"].Value.ToString();
-			if (Helpers.IsStringEmptyNullOrWhiteSpace(line)) return;
-			
-			Structures.ToonListEntry currentToonEntry = new Structures.ToonListEntry();
-			List<Structures.EpisodeListEntry> toonEpisodeList = new List<Structures.EpisodeListEntry>();
-			
-			int urlEnd = (line.IndexOf('&') == -1) ? line.Length : line.IndexOf('&');
-			line = line.Substring(0, urlEnd);
-			Uri baseUri = new Uri(line);
-			string baseUrl = baseUri.GetLeftPart(UriPartial.Path);
+        private async Task GetChapterAsync(DataGridViewRow r)
+        {
+            string line = r.Cells["titleUrl"].Value.ToString();
+            if (Helpers.IsStringEmptyNullOrWhiteSpace(line)) return;
 
-			currentToonEntry.toonInfo.titleNo = Convert.ToInt32(r.Cells["titleNo"].Value.ToString());
-			currentToonEntry.toonInfo.toonTitleName = r.Cells["titleName"].Value.ToString();
-			currentToonEntry.toonInfo.startDownloadAtEpisode = r.Cells["titleEpBegin"].Value.ToString();
-			currentToonEntry.toonInfo.stopDownloadAtEpisode = r.Cells["titleEpEnd"].Value.ToString();
-			currentToonEntry.toonInfo.toonTranslationLanguageCode = r.Cells["titleTranslationLanguageCode"].Value.ToString();
-			currentToonEntry.toonInfo.toonTranslationTeamVersion = r.Cells["titleTranslationTeamVersion"].Value.ToString();
+            Structures.ToonListEntry currentToonEntry = new Structures.ToonListEntry();
+            List<Structures.EpisodeListEntry> toonEpisodeList = new List<Structures.EpisodeListEntry>();
 
-			using (WebClient client = new WebClient())
-			{
-				int i = 0;
-				
-				string nextPageUrl = line + "&page=1";
+            int urlEnd = (line.IndexOf('&') == -1) ? line.Length : line.IndexOf('&');
+            line = line.Substring(0, urlEnd);
+            Uri baseUri = new Uri(line);
+            string baseUrl = baseUri.GetLeftPart(UriPartial.Path);
 
-				int episodeBegin = int.Parse(currentToonEntry.toonInfo.startDownloadAtEpisode);
-				int episodeEnd = (currentToonEntry.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToonEntry.toonInfo.stopDownloadAtEpisode);
+            currentToonEntry.toonInfo.titleNo = Convert.ToInt32(r.Cells["titleNo"].Value.ToString());
+            currentToonEntry.toonInfo.toonTitleName = r.Cells["titleName"].Value.ToString();
+            currentToonEntry.toonInfo.startDownloadAtEpisode = r.Cells["titleEpBegin"].Value.ToString();
+            currentToonEntry.toonInfo.stopDownloadAtEpisode = r.Cells["titleEpEnd"].Value.ToString();
+            currentToonEntry.toonInfo.toonTranslationLanguageCode = r.Cells["titleTranslationLanguageCode"].Value.ToString();
+            currentToonEntry.toonInfo.toonTranslationTeamVersion = r.Cells["titleTranslationTeamVersion"].Value.ToString();
 
-				while (true)
-				{
-					i++;
-					processInfo.Invoke((MethodInvoker)delegate { processInfo.Text = $"[ ({currentToonEntry.toonInfo.titleNo}) {currentToonEntry.toonInfo.toonTitleName} ] scoping tab {i}"; }); //run on the UI thread
-					client.Headers.Add("Cookie", "pagGDPR=true;");  //add cookies to bypass age verification
-					client.Headers.Add("User-Agent", Globals.spoofedUserAgent);
+            using (WebClient client = new WebClient())
+            {
+                int i = 0;
+                string nextPageUrl = line + "&page=1";
 
-					IWebProxy proxy = WebRequest.DefaultWebProxy;   //add default proxy
-					client.Proxy = proxy;
-					
-					client.Encoding = System.Text.Encoding.UTF8;
+                int episodeBegin = int.Parse(currentToonEntry.toonInfo.startDownloadAtEpisode);
+                int episodeEnd = (currentToonEntry.toonInfo.stopDownloadAtEpisode == "end") ? -1 : int.Parse(currentToonEntry.toonInfo.stopDownloadAtEpisode);
 
-					string html = client.DownloadString(nextPageUrl);
-					var htmlDoc = new HtmlAgilityPack.HtmlDocument();
-					htmlDoc.LoadHtml(html);
-					var episodeNodes = htmlDoc.DocumentNode.SelectNodes(Globals.episodeListItemHtmlXPath);
+                while (true)
+                {
+                    i++;
+                    processInfo.Invoke((MethodInvoker)delegate {
+                        processInfo.Text = $"[ ({currentToonEntry.toonInfo.titleNo}) {currentToonEntry.toonInfo.toonTitleName} ] scoping tab {i}";
+                    });
+
+					client.Headers.Clear();
+                    client.Headers.Add("Cookie", "pagGDPR=true;");
+                    client.Headers.Add("User-Agent", Globals.spoofedUserAgent);
+                    client.Proxy = WebRequest.DefaultWebProxy;
+                    client.Encoding = System.Text.Encoding.UTF8;
+
+                    string html = null; 
+                    int retries = 0; 
+                    const int maxRetries = 5;
+                    const int baseDelayMs = 2000;
+
+                    while (retries < maxRetries)
+                    {
+                        try
+                        {
+                            await Task.Delay(baseDelayMs + new Random().Next(500, 1500));
+                            html = client.DownloadString(nextPageUrl);
+                            break;
+                        }
+                        catch (WebException ex) when (((HttpWebResponse)ex.Response)?.StatusCode == (HttpStatusCode)429 ||
+                              (int)((HttpWebResponse)ex.Response)?.StatusCode == 429)
+                        {
+                            retries++;
+                            int waitTime = baseDelayMs * retries;
+                            await Task.Delay(waitTime);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error fetching page: {ex.Message}");
+                            return;
+                        }
+                    }
+
+                    if (html == null)
+                    {
+                        Console.WriteLine("Max retries reached. Skipping this entry.");
+                        return;
+                    }
+
+                    var htmlDoc = new HtmlAgilityPack.HtmlDocument();
+                    htmlDoc.LoadHtml(html);
+                    var episodeNodes = htmlDoc.DocumentNode.SelectNodes(Globals.episodeListItemHtmlXPath);
 
 					if(episodeNodes != null)
-					{
-						foreach (var node in episodeNodes)
-						{
-							int episodeNo = -1;
-							if (node.Attributes["data-episode-no"] != null)
-							{
-								episodeNo = Convert.ToInt32(node.Attributes["data-episode-no"].Value);
-							}
+                    {
+                        foreach (var node in episodeNodes)
+                        {
+                            int episodeNo = -1;
+                            if (node.Attributes["data-episode-no"] != null)
+                            {
+                                episodeNo = Convert.ToInt32(node.Attributes["data-episode-no"].Value);
+                            }
 
-							HtmlNode inner_a_node = node.SelectSingleNode("./a");
-							string url = inner_a_node.Attributes["href"].Value;
-							string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
-							string episodeSequence = inner_a_node.SelectSingleNode("./span[@class='tx']").InnerHtml;
+                            HtmlNode inner_a_node = node.SelectSingleNode("./a");
+                            string url = inner_a_node.Attributes["href"].Value;
+                            string episodeTitle = inner_a_node.SelectSingleNode("./span[@class='subj']/span").InnerHtml;
+                            string episodeSequence = inner_a_node.SelectSingleNode("./span[@class='tx']").InnerHtml;
 
 							//Skip out-of-range chapters.
-							if (episodeNo < episodeBegin || (episodeEnd != -1 && episodeNo > episodeEnd))
-							{
-								continue;
-							}
+                            if (episodeNo < episodeBegin || (episodeEnd != -1 && episodeNo > episodeEnd))
+                            {
+                                continue;
+                            }
 
 							Structures.EpisodeListEntry currentEpisode = new Structures.EpisodeListEntry();
 							
@@ -273,30 +305,29 @@ namespace Kea
 							currentEpisode.episodeNo = episodeNo;
 							currentEpisode.episodeTitle = Helpers.SanitizeStringForFilePath(episodeTitle);
 							currentEpisode.url = url;
-							
-							toonEpisodeList.Add(currentEpisode);
-						}
-					}
 
-					string nextPage = GetWebsiteNextPageUrl(htmlDoc);
-					if (Helpers.IsStringEmptyNullOrWhiteSpace(nextPage))
-						break;
+                            toonEpisodeList.Add(currentEpisode);
+                        }
+                    }
 
-					if (!Helpers.IsValidURL(nextPage))
-						nextPage = baseUri.GetLeftPart(UriPartial.Authority) + nextPage;
+                    string nextPage = GetWebsiteNextPageUrl(htmlDoc);
+                    if (Helpers.IsStringEmptyNullOrWhiteSpace(nextPage))
+                        break;
 
-					nextPageUrl = nextPage;
-				}
-			}
-			
-			//Toons are listed from last episode to first episode, so order needs to be reversed.
-			toonEpisodeList.Reverse();
+                    if (!Helpers.IsValidURL(nextPage))
+                        nextPage = baseUri.GetLeftPart(UriPartial.Authority) + nextPage;
 
-			currentToonEntry.episodeList = toonEpisodeList.ToArray();
-			toonList.Add(currentToonEntry);
-		}
+                    nextPageUrl = nextPage;
+                }
+            }
 
-		private void downloadComic(Structures.ToonListEntry currentToon)
+            toonEpisodeList.Reverse();
+
+            currentToonEntry.episodeList = toonEpisodeList.ToArray();
+            toonList.Add(currentToonEntry);
+        }
+
+        private void downloadComic(Structures.ToonListEntry currentToon)
 		{
 			string baseSavePath = savepathTB.Text + @"\";
 			string comicSavePath = baseSavePath + ToonHelpers.GetToonSavePath(currentToon.toonInfo);
