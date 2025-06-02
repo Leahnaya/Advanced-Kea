@@ -2,8 +2,8 @@
 ###### *with GUI and everything!*  
 Kea is an appication for downloading comics from https://www.webtoons.com for personal, offline use.
 ## How To: Download
-Download [Advanced Kea v.1.3.5](https://github.com/Anything144/Advanced-Kea/releases/download/v1.3.5/AdvancedKea.v1.3.5.zip)
-or look at all releases [here](https://github.com/Anything144/Advanced-Kea/releases).  
+Download [Advanced Kea v.1.4.0](https://github.com/Leahnaya/Advanced-Kea/releases/download/v1.4.0/AdvancedKea.v1.4.0.zip)
+or look at all releases [here](https://github.com/Leahnaya/Advanced-Kea/releases).  
 After the .zip folder downloaded unzip it and run Kea.exe.  
 *(all files in the Kea folder need to stay in the same directory)*
 
